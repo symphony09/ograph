@@ -14,14 +14,21 @@ type Element struct {
 	FactoryName string
 	Wrappers    []string
 	ParamsMap   map[string]any
+	DefaultImpl string
 
 	Singleton ogcore.Node `json:"-"`
 
-	SubElements []*Element
+	SubElements  []*Element
+	ImplElements []*Element
 }
 
 func (e *Element) SetVirtual(isVirtual bool) *Element {
 	e.Virtual = isVirtual
+	return e
+}
+
+func (e *Element) AsVirtual() *Element {
+	e.Virtual = true
 	return e
 }
 
@@ -46,6 +53,16 @@ func (e *Element) UseFn(fn func() error) *Element {
 		Action: func(ctx context.Context, state ogcore.State) error {
 			return fn()
 		}}
+
+	return e
+}
+
+func (e *Element) Implement(virtualElem *Element, isDefault bool) *Element {
+	virtualElem.ImplElements = append(virtualElem.ImplElements, e)
+
+	if isDefault {
+		virtualElem.DefaultImpl = e.Name
+	}
 
 	return e
 }

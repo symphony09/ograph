@@ -34,6 +34,8 @@ Like CGraph, OGraph also provides basic graph construction and scheduling execut
 
 *   Supports exporting graph structure and importing it for execution (within the constraints).
 
+*    Flexible virtual node settings to simplify dependencies, and to delay the execution of actual nodes until runtime, enabling polymorphism.
+
 ### Performance Comparison
 
 After benchmarking, the performance of OGraph and CGraph are on the same level. However, OGraph has an advantage in performance in io-intensive scenarios.
@@ -123,22 +125,18 @@ More examples can be found in the code under the "example" directory.
 
 ## Q&A
 
-1. 
-Q: What are the limitations of exporting and importing graphs?
+> What are the limitations of exporting and importing graphs?
 
-A: All nodes need to be created using a factory method, and the import graph pipeline must be registered with the factory associated with the imported node.
+All nodes need to be created using a factory method, and the import graph pipeline must be registered with the factory associated with the imported node.
 
-2. 
-Q: Why do we provide multiple node calling methods (UseNode, UseFactory, UseFn)?
+> Why do we provide multiple node create methods (UseNode, UseFactory, UseFn)?
 
-A: For simple scenarios, it's convenient to register a singleton and run functions directly. However, when considering pipeline concurrency issues and graph import/export, we need to use the factory method.
+For simple scenarios, it's convenient to register a singleton and run functions directly. However, when considering pipeline concurrency issues and graph import/export, we need to use the factory method.
 
-3. 
-Q: Is the access to State safe for concurrent use?
+> Is the access to State safe for concurrent use?
 
-A: By default, the State access is safe for concurrent use, but if a custom implementation is used, concurrency safety cannot be guaranteed.
+By default, the State access is safe for concurrent use, but if a custom implementation is used, concurrency safety cannot be guaranteed.
 
-4. 
-Q: How to achieve optimal performance? Are there any best practices? 
+> How to achieve optimal performance? Are there any best practices?
 
-A: Since coroutines are lightweight and flexible, they usually don't require adjustments or optimizations. If node initialization is slow, you can consider preheating the worker pool.
+Since coroutines are lightweight and flexible, they usually don't require adjustments or optimizations. If node initialization is slow, you can consider preheating the worker pool.

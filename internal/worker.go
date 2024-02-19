@@ -11,13 +11,15 @@ import (
 
 type Worker struct {
 	graph *Graph[ogcore.Node]
-
-	GorLimit int
-
-	DynamicActions map[string]ogcore.Action
 }
 
-func (worker *Worker) Work(ctx context.Context, state ogcore.State) error {
+type WorkParams struct {
+	GorLimit         int
+	ActionsBeforeRun map[string]ogcore.Action
+	ActionsAfterRun  map[string]ogcore.Action
+}
+
+func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
 	todoCh, doneCh := worker.graph.Scheduling()
 	defer close(doneCh)
 
@@ -40,14 +42,22 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State) error {
 			currentWorkName = work.Name
 			node := work.Elem
 
+			if params.ActionsBeforeRun != nil {
+				if action := params.ActionsBeforeRun[work.Name]; action != nil {
+					if err := action(ctx, state); err != nil {
+						return fmt.Errorf("%s failed, error: %w", work.Name, err)
+					}
+				}
+			}
+
 			if node != nil {
 				if err := node.Run(ctx, state); err != nil {
 					return fmt.Errorf("%s failed, error: %w", work.Name, err)
 				}
-			} else {
-				action := worker.DynamicActions[work.Name]
+			}
 
-				if action != nil {
+			if params.ActionsAfterRun != nil {
+				if action := params.ActionsAfterRun[work.Name]; action != nil {
 					if err := action(ctx, state); err != nil {
 						return fmt.Errorf("%s failed, error: %w", work.Name, err)
 					}
@@ -59,12 +69,12 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State) error {
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(worker.GorLimit)
+	g.SetLimit(params.GorLimit)
 
 	pn := runtime.GOMAXPROCS(0)
 
-	if worker.GorLimit > 0 && worker.GorLimit <= pn {
-		for i := 0; i < worker.GorLimit; i++ {
+	if params.GorLimit > 0 && params.GorLimit <= pn {
+		for i := 0; i < params.GorLimit; i++ {
 			g.Go(func() (err error) {
 				for works := range todoCh {
 					if err := doWorks(works); err != nil {
@@ -107,9 +117,5 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State) error {
 func NewWorker(graph *Graph[ogcore.Node]) *Worker {
 	return &Worker{
 		graph: graph,
-
-		GorLimit: -1,
-
-		DynamicActions: make(map[string]ogcore.Action),
 	}
 }

@@ -3,7 +3,6 @@ package ograph
 import (
 	"context"
 	"encoding/json"
-	"maps"
 
 	"github.com/symphony09/ograph/internal"
 	"github.com/symphony09/ograph/ogcore"
@@ -17,7 +16,6 @@ type Pipeline struct {
 	elements map[string]*Element
 	pool     internal.WorkerPool
 
-	VirtualSlots     map[string]ogcore.Action
 	Interrupters     []ogcore.Interrupter
 	ParallelismLimit int
 }
@@ -79,9 +77,9 @@ func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
 		state = NewState()
 	}
 
-	pipeline.prepare(worker)
+	params := pipeline.newWorkParams()
 
-	return worker.Work(ctx, state)
+	return worker.Work(ctx, state, params)
 }
 
 func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
@@ -100,36 +98,17 @@ func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
 	return nil
 }
 
-func (pipeline *Pipeline) prepare(worker *internal.Worker) {
+func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
+	params := &internal.WorkParams{}
 	if pipeline.ParallelismLimit > 0 {
-		worker.GorLimit = pipeline.ParallelismLimit
+		params.GorLimit = pipeline.ParallelismLimit
+	} else {
+		params.GorLimit = -1
 	}
 
-	actions := make(map[string]ogcore.Action)
-	maps.Copy(actions, pipeline.VirtualSlots)
+	params.ActionsBeforeRun, params.ActionsAfterRun = ogcore.GenActionsByIntr(pipeline.Interrupters)
 
-	for _, interrupter := range pipeline.Interrupters {
-		interrupt := ogcore.NewInterrupt(interrupter.Handler)
-
-		for _, point := range interrupter.Points {
-			if action := actions[point]; action == nil {
-				actions[point] = func(ctx context.Context, state ogcore.State) error {
-					err, _ := interrupt(ogcore.NewInterruptCtx(ctx, point, state))
-					return err
-				}
-			} else {
-				actions[point] = func(ctx context.Context, state ogcore.State) error {
-					if err, _ := interrupt(ogcore.NewInterruptCtx(ctx, point, state)); err != nil {
-						return err
-					}
-
-					return action(ctx, state)
-				}
-			}
-		}
-	}
-
-	worker.DynamicActions = actions
+	return params
 }
 
 func (pipeline *Pipeline) DumpGraph() ([]byte, error) {
@@ -154,7 +133,5 @@ func NewPipeline() *Pipeline {
 		elements: make(map[string]*Element),
 
 		ParallelismLimit: -1,
-
-		VirtualSlots: make(map[string]ogcore.Action),
 	}
 }

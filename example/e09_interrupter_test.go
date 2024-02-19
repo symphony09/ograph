@@ -13,8 +13,8 @@ import (
 func TestInterrupter(t *testing.T) {
 	pipeline := ograph.NewPipeline()
 
-	begin := ograph.NewElement("Begin").SetVirtual(true)
-	end := ograph.NewElement("End").SetVirtual(true)
+	begin := ograph.NewElement("Begin").AsVirtual()
+	end := ograph.NewElement("End").AsVirtual()
 
 	zhangShan := ograph.NewElement("ZhangSan").UseNode(&Sloth{})
 	flash := ograph.NewElement("Flash").UseNode(&Sloth{})
@@ -36,7 +36,7 @@ func TestInterrupter(t *testing.T) {
 		return nil
 	}
 
-	pipeline.RegisterInterrupt(handler, "Begin", "End")
+	pipeline.RegisterInterrupt(handler, "Begin:before", "End:after")
 
 	if err := pipeline.Run(context.TODO(), nil); err != nil {
 		t.Error(err)
