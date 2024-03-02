@@ -3,6 +3,7 @@ package ogimpl
 const (
 	Choose   = "Choose"
 	Parallel = "Parallel"
+	Race     = "Race"
 
 	Async     = "Async"
 	Condition = "Condition"
