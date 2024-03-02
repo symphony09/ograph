@@ -1,8 +1,6 @@
 package ogimpl
 
 import (
-	"sync"
-
 	"github.com/symphony09/ograph/ogcore"
 )
 
@@ -14,8 +12,6 @@ const (
 type GuardState struct {
 	guard  func(key any) int
 	target ogcore.State
-
-	sync.RWMutex
 }
 
 func (state *GuardState) Get(key any) (any, bool) {

@@ -14,10 +14,10 @@ type OverlayState struct {
 }
 
 func (state *OverlayState) Get(key any) (any, bool) {
-	if val, ok := state.Upper[key]; ok {
-		state.RLock()
-		defer state.RUnlock()
+	state.RLock()
+	defer state.RUnlock()
 
+	if val, ok := state.Upper[key]; ok {
 		return val, ok
 	}
 
