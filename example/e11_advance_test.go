@@ -88,6 +88,36 @@ func TestAdvance_DumpAndLoad(t *testing.T) {
 	}
 }
 
+func TestAdvance_DumpDOT(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	pipeline.RegisterFactory("Cluster", func() ogcore.Node { return &ograph.BaseCluster{} })
+	pipeline.RegisterFactory("Node", func() ogcore.Node { return &ograph.BaseNode{} })
+
+	begin := ograph.NewElement("Begin").AsVirtual()
+
+	n1 := ograph.NewElement("Node_1").UseFn(func() error { return nil })
+	n2 := ograph.NewElement("Node_2").UseFactory("Node")
+	c1 := ograph.NewElement("Cluster_1").UseFactory("Cluster", n1, n2)
+	n3 := ograph.NewElement("Node_3").UseNode(&ograph.BaseNode{})
+
+	end := ograph.NewElement("End").AsVirtual()
+	end1 := ograph.NewElement("End_1").UseFactory("Node")
+	end2 := ograph.NewElement("End_2").UseFactory("Node")
+
+	end1.Implement(end, true)
+	end2.Implement(end, false)
+
+	pipeline.Register(begin, ograph.Then(c1, n3)).
+		Register(end, ograph.DependOn(c1, n3))
+
+	if data, err := pipeline.DumpDOT(); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(string(data))
+	}
+}
+
 func init() {
 	global.Factories.Add("Person", func() ogcore.Node { return &Person{} })
 }
