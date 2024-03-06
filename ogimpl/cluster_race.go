@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -20,7 +19,7 @@ type RaceCluster struct {
 	ograph.BaseCluster
 	*slog.Logger
 
-	RaceStateKeys string
+	StateIsolation bool
 }
 
 func (cluster *RaceCluster) Run(ctx context.Context, state ogcore.State) error {
@@ -32,49 +31,34 @@ func (cluster *RaceCluster) Run(ctx context.Context, state ogcore.State) error {
 	defer cancel()
 
 	raceCh := make(chan struct{})
-	raceKV := make(map[string]any)
 
 	var failures atomic.Uint32
 	var once sync.Once
-	var winnerState ogcore.State
-
-	var raceStateKeys []string
-	if cluster.RaceStateKeys != "" {
-		raceStateKeys = strings.Split(cluster.RaceStateKeys, ",")
-	}
-
-	for _, k := range raceStateKeys {
-		raceKV[k], _ = state.Get(k)
-
-		go func(key string) {
-			state.Update(key, func(val any) any {
-				<-raceCh
-
-				if winnerState != nil {
-					if newVal, ok := winnerState.Get(key); ok {
-						return newVal
-					}
-				}
-
-				return val
-			})
-		}(k)
-	}
+	var winner string
 
 	for _, node := range cluster.Group {
 		go func(node ogcore.Node) {
-			overlayState := NewOverlayState(state)
-			for k, v := range raceKV {
-				overlayState.Set(k, v)
+			var clusterState ogcore.State
+
+			if cluster.StateIsolation {
+				clusterState = NewOverlayState(state)
+			} else {
+				clusterState = NewGuardState(state, func(key any) (flag int) {
+					if ctx.Err() != nil {
+						return AllowRead
+					} else {
+						return AllowRead | AllowWrite
+					}
+				})
 			}
 
-			if err := node.Run(ctx, overlayState); err != nil {
-				nodeName := "unknown"
+			nodeName := "unknown"
 
-				if nameable, ok := node.(ogcore.Nameable); ok {
-					nodeName = nameable.Name()
-				}
+			if nameable, ok := node.(ogcore.Nameable); ok {
+				nodeName = nameable.Name()
+			}
 
+			if err := node.Run(ctx, clusterState); err != nil {
 				cluster.Warn("race node failed",
 					"RaceCluster", cluster.Name(), "RaceNode", nodeName, "Error", err)
 
@@ -83,7 +67,7 @@ func (cluster *RaceCluster) Run(ctx context.Context, state ogcore.State) error {
 				}
 			} else {
 				once.Do(func() {
-					winnerState = overlayState
+					winner = nodeName
 					close(raceCh)
 				})
 			}
@@ -91,9 +75,12 @@ func (cluster *RaceCluster) Run(ctx context.Context, state ogcore.State) error {
 	}
 
 	<-raceCh
-	if winnerState == nil {
+
+	if int(failures.Load()) == len(cluster.Group) {
 		return errors.New("all race nodes failed")
 	}
+
+	cluster.Info("race cluster finish", "Winner", winner)
 
 	return nil
 }

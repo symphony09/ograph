@@ -44,15 +44,8 @@ type Player struct {
 }
 
 func (player *Player) Run(ctx context.Context, state ogcore.State) error {
-	time.Sleep(player.Cost)
-	state.Update("Winner", func(val any) any {
-		if val == nil {
-			return player.Name()
-		}
-		return val
-	})
-
-	time.Sleep(player.Delay)
+	time.Sleep(player.Cost + player.Delay)
+	state.Set("Winner", player.Name())
 	return nil
 }
 
@@ -62,8 +55,7 @@ func TestCluster_Race(t *testing.T) {
 	turtle := ograph.NewElement("Turtle").UseNode(&Player{Cost: 5 * time.Millisecond})
 	rabbit := ograph.NewElement("Rabbit").UseNode(&Player{Cost: 1 * time.Millisecond, Delay: 50 * time.Millisecond})
 
-	race := ograph.NewElement("Race").UseFactory(ogimpl.Race, turtle, rabbit).
-		Params("RaceStateKeys", "Winner").Wrap(ogimpl.Trace)
+	race := ograph.NewElement("Race").UseFactory(ogimpl.Race, turtle, rabbit).Wrap(ogimpl.Trace)
 
 	pipeline.Register(race)
 

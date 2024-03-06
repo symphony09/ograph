@@ -50,6 +50,7 @@ func (cluster *ChooseCluster) Run(ctx context.Context, state ogcore.State) error
 	if err := chosenNode.Run(ctx, state); err != nil {
 		return fmt.Errorf("chosen node (%s) failed, err: %w", nodeName, err)
 	} else {
+		cluster.Info("choose cluster finish", "Chosen", nodeName)
 		return nil
 	}
 }
