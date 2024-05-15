@@ -1,6 +1,8 @@
 package ogimpl
 
 const (
+	CMD = "CMD"
+
 	Choose   = "Choose"
 	Parallel = "Parallel"
 	Race     = "Race"
