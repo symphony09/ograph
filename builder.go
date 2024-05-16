@@ -2,6 +2,7 @@ package ograph
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/symphony09/ograph/global"
@@ -138,8 +139,23 @@ func (builder *Builder) doInit(node any, params map[string]any) error {
 			return err
 		}
 	} else {
+		decoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToIPHookFunc(),
+				mapstructure.StringToIPNetHookFunc(),
+				mapstructure.StringToTimeDurationHookFunc(),
+				mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
+			),
+			Result: &node,
+		}
+
+		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		if err != nil {
+			return err
+		}
+
 		if params != nil {
-			if err := mapstructure.Decode(params, &node); err != nil {
+			if err := decoder.Decode(params); err != nil {
 				return err
 			}
 		}
