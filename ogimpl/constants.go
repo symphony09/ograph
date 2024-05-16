@@ -14,4 +14,5 @@ const (
 	Slient    = "Slient"
 	Timeout   = "Timeout"
 	Trace     = "Trace"
+	Delay     = "Delay"
 )
