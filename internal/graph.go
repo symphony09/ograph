@@ -83,15 +83,15 @@ func MapToNewGraph[OE any, NE any](graph *Graph[OE], mapper Mapper[OE, NE]) (*Gr
 	}
 
 	for _, vertex := range graph.Vertices {
+		newVertex := newVertices[vertex.Name]
+
 		for _, dep := range vertex.Dependencies {
 			newDep := newVertices[dep.Name]
-			newVertex := newVertices[vertex.Name]
 			newVertex.Dependencies = append(newVertex.Dependencies, newDep)
 		}
 
 		for _, next := range vertex.Next {
 			newNext := newVertices[next.Name]
-			newVertex := newVertices[vertex.Name]
 			newVertex.Next = append(newVertex.Next, newNext)
 		}
 	}
