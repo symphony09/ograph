@@ -2,6 +2,7 @@ package ograph
 
 import (
 	"context"
+	"maps"
 	"strings"
 
 	"github.com/symphony09/ograph/internal"
@@ -95,6 +96,24 @@ func (e *Element) filterParams(owner string) map[string]any {
 	}
 
 	return ret
+}
+
+func (e *Element) GetRequiredFactories() map[string]bool {
+	factoriesMap := make(map[string]bool)
+
+	if e.FactoryName != "" {
+		factoriesMap[e.FactoryName] = true
+	}
+
+	for _, subElem := range e.SubElements {
+		maps.Copy(factoriesMap, subElem.GetRequiredFactories())
+	}
+
+	for _, implElem := range e.ImplElements {
+		maps.Copy(factoriesMap, implElem.GetRequiredFactories())
+	}
+
+	return factoriesMap
 }
 
 type PGraph = internal.Graph[*Element]

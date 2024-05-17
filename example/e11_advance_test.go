@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -23,6 +24,20 @@ func TestAdvance_Check(t *testing.T) {
 
 	if err := pipeline.Check(); err == nil {
 		t.Error("unexpect nil err")
+	} else {
+		fmt.Println(err)
+	}
+
+	pipeline2 := ograph.NewPipeline()
+
+	wangWu := ograph.NewElement("WangWu").UseFactory("404")
+
+	pipeline2.Register(wangWu)
+
+	if err := pipeline2.Check(); err == nil {
+		t.Error("unexpect nil err")
+	} else if !errors.Is(err, ograph.ErrFactoryNotFound) {
+		t.Errorf("unexpect err: %#v", err)
 	} else {
 		fmt.Println(err)
 	}

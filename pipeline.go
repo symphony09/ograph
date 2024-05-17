@@ -3,10 +3,15 @@ package ograph
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 
+	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/internal"
 	"github.com/symphony09/ograph/ogcore"
 )
+
+var ErrFactoryNotFound error = errors.New("factory not found")
 
 type Pipeline struct {
 	BaseNode
@@ -50,6 +55,19 @@ func (pipeline *Pipeline) RegisterInterrupt(handler ogcore.InterruptHandler, on 
 }
 
 func (pipeline *Pipeline) Check() error {
+	factories := pipeline.Builder.Factories
+	if factories == nil {
+		factories = global.Factories.Clone()
+	}
+
+	for _, vertex := range pipeline.graph.Vertices {
+		for factory := range vertex.Elem.GetRequiredFactories() {
+			if factories.Get(factory) == nil {
+				return fmt.Errorf("%w, name: %s", ErrFactoryNotFound, factory)
+			}
+		}
+	}
+
 	return pipeline.graph.Check()
 }
 
