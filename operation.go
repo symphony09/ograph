@@ -1,6 +1,6 @@
 package ograph
 
-type Op func(pipeline *Pipeline, node *Element)
+type Op func(pipeline *Pipeline, element *Element)
 
 var DependOn = func(dependencies ...*Element) Op {
 	return func(pipeline *Pipeline, element *Element) {

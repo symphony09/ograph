@@ -15,20 +15,20 @@ type Builder struct {
 }
 
 func (builder *Builder) RegisterPrototype(name string, prototype ogcore.Cloneable) *Builder {
-	newNode := func() ogcore.Node {
+	factory := func() ogcore.Node {
 		return prototype.Clone()
 	}
 
-	builder.RegisterFactory(name, newNode)
+	builder.RegisterFactory(name, factory)
 	return builder
 }
 
-func (builder *Builder) RegisterFactory(name string, newNode func() ogcore.Node) *Builder {
+func (builder *Builder) RegisterFactory(name string, factory func() ogcore.Node) *Builder {
 	if builder.Factories == nil {
 		builder.Factories = global.Factories.Clone()
 	}
 
-	builder.Factories.Add(name, newNode)
+	builder.Factories.Add(name, factory)
 	return builder
 }
 
@@ -71,8 +71,8 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 
 	if element.Singleton != nil {
 		node = element.Singleton
-	} else if newNode := builder.Factories.Get(element.FactoryName); newNode != nil {
-		node = newNode()
+	} else if factory := builder.Factories.Get(element.FactoryName); factory != nil {
+		node = factory()
 
 		if err := builder.doInit(node, element.ParamsMap); err != nil {
 			return nil, fmt.Errorf("cann't init node %s, err: %v", element.Name, err)
@@ -109,8 +109,8 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 		for _, wrapperFactoryName := range element.Wrappers {
 			var wrapperNode ogcore.Node
 
-			if newNode := builder.Factories.Get(wrapperFactoryName); newNode != nil {
-				wrapperNode = newNode()
+			if factory := builder.Factories.Get(wrapperFactoryName); factory != nil {
+				wrapperNode = factory()
 			} else {
 				return nil, fmt.Errorf("cann't build wrapper for %s, factory of %s not found", element.Name, wrapperFactoryName)
 			}
