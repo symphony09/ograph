@@ -71,6 +71,8 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 
 	if element.Singleton != nil {
 		node = element.Singleton
+	} else if element.PrivateFactory != nil {
+		node = element.PrivateFactory()
 	} else if factory := builder.Factories.Get(element.FactoryName); factory != nil {
 		node = factory()
 

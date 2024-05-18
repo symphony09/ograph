@@ -19,6 +19,8 @@ type Element struct {
 
 	Singleton ogcore.Node `json:"-"`
 
+	PrivateFactory func() ogcore.Node `json:"-"`
+
 	SubElements  []*Element
 	ImplElements []*Element
 }
@@ -33,9 +35,15 @@ func (e *Element) AsVirtual() *Element {
 	return e
 }
 
-func (e *Element) UseFactory(name string, subPNodes ...*Element) *Element {
+func (e *Element) UseFactory(name string, subElements ...*Element) *Element {
 	e.FactoryName = name
-	e.SubElements = append(e.SubElements, subPNodes...)
+	e.SubElements = append(e.SubElements, subElements...)
+	return e
+}
+
+func (e *Element) UsePrivateFactory(factory func() ogcore.Node, subElements ...*Element) *Element {
+	e.PrivateFactory = factory
+	e.SubElements = append(e.SubElements, subElements...)
 	return e
 }
 

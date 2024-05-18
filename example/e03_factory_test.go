@@ -40,3 +40,25 @@ func TestFactory(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+type Fakes struct{}
+
+func (p Fakes) Run(ctx context.Context, state ogcore.State) error {
+	fmt.Printf("produced at %s\n", time.Now().Add(time.Hour*24))
+	return nil
+}
+
+func TestPrivateFactory(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	x1 := ograph.NewElement("x1").UsePrivateFactory(
+		func() ogcore.Node {
+			return &Fakes{}
+		})
+
+	pipeline.Register(x1)
+
+	if err := pipeline.Run(context.TODO(), nil); err != nil {
+		t.Error(err)
+	}
+}
