@@ -27,6 +27,11 @@ func (pool *WorkerPool) Put(worker *Worker) {
 	}
 }
 
+func (pool *WorkerPool) Reset() {
+	pool.cache.Reset()
+	pool.lower = *new(sync.Pool)
+}
+
 type WorkerCache struct {
 	MaxSize int
 
@@ -69,6 +74,17 @@ func (cache *WorkerCache) Put(worker *Worker) bool {
 	cache.workers = append(cache.workers, worker)
 
 	return true
+}
+
+func (cache *WorkerCache) Reset() {
+	if cache.MaxSize <= 0 {
+		return
+	}
+
+	cache.Lock()
+	defer cache.Unlock()
+
+	cache.workers = cache.workers[:0]
 }
 
 func NewWorkerPool(cacheSize int) *WorkerPool {

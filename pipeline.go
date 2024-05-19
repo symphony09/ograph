@@ -23,6 +23,7 @@ type Pipeline struct {
 
 	Interrupters     []ogcore.Interrupter
 	ParallelismLimit int
+	DisablePool      bool
 }
 
 func (pipeline *Pipeline) Register(e *Element, ops ...Op) *Pipeline {
@@ -72,20 +73,27 @@ func (pipeline *Pipeline) Check() error {
 }
 
 func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
-	worker, ok := pipeline.pool.Get()
+	var worker *internal.Worker
 
-	if !ok {
-		var buildErr error
-
-		worker, buildErr = pipeline.build(pipeline.graph)
-		if buildErr != nil {
-			return buildErr
+	if !pipeline.DisablePool {
+		if poolWorker, ok := pipeline.pool.Get(); ok {
+			worker = poolWorker
 		}
 	}
 
-	defer func() {
-		pipeline.pool.Put(worker)
-	}()
+	if worker == nil {
+		if newWorker, err := pipeline.build(pipeline.graph); err != nil {
+			return err
+		} else {
+			worker = newWorker
+		}
+	}
+
+	if !pipeline.DisablePool {
+		defer func() {
+			pipeline.pool.Put(worker)
+		}()
+	}
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -116,6 +124,10 @@ func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
 	return nil
 }
 
+func (pipeline *Pipeline) ResetPool() {
+	pipeline.pool.Reset()
+}
+
 func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
 	params := &internal.WorkParams{}
 	if pipeline.ParallelismLimit > 0 {
@@ -142,6 +154,9 @@ func (pipeline *Pipeline) LoadGraph(data []byte) error {
 	}
 
 	pipeline.graph = marshaler.GenerateGraph()
+
+	pipeline.ResetPool()
+
 	return nil
 }
 
