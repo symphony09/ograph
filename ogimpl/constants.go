@@ -15,4 +15,5 @@ const (
 	Timeout   = "Timeout"
 	Trace     = "Trace"
 	Delay     = "Delay"
+	Debug     = "Debug"
 )

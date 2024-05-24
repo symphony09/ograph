@@ -19,4 +19,5 @@ func init() {
 	global.Factories.Add(Timeout, TimeoutWrapperFactory)
 	global.Factories.Add(Trace, TraceWrapperFactory)
 	global.Factories.Add(Delay, DelayWrapperFactory)
+	global.Factories.Add(Debug, DebugWrapperFactory)
 }
