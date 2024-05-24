@@ -5,7 +5,7 @@ import (
 	"github.com/symphony09/ograph/ogcore"
 )
 
-type StateHookFn func(state ogcore.State, event, key any, completed bool)
+type StateHookFn func(state ogcore.State, event string, key any, completed bool)
 
 type HookState struct {
 	Base ogcore.State
