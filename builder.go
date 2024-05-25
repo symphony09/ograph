@@ -77,7 +77,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 		node = factory()
 
 		if err := builder.doInit(node, element.ParamsMap); err != nil {
-			return nil, fmt.Errorf("cann't init node %s, err: %v", element.Name, err)
+			return nil, fmt.Errorf("can't init node %s, err: %v", element.Name, err)
 		}
 
 		if len(element.SubElements) > 0 {
@@ -100,7 +100,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("cann't build node %s, factory of %s not found", element.Name, element.FactoryName)
+		return nil, fmt.Errorf("can't build node %s, factory of %s not found", element.Name, element.FactoryName)
 	}
 
 	if nameable, ok := node.(ogcore.Nameable); ok {
@@ -114,7 +114,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 			if factory := builder.Factories.Get(wrapperFactoryName); factory != nil {
 				wrapperNode = factory()
 			} else {
-				return nil, fmt.Errorf("cann't build wrapper for %s, factory of %s not found", element.Name, wrapperFactoryName)
+				return nil, fmt.Errorf("can't build wrapper for %s, factory of %s not found", element.Name, wrapperFactoryName)
 			}
 
 			if nameable, ok := wrapperNode.(ogcore.Nameable); ok {
@@ -122,7 +122,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 			}
 
 			if err := builder.doInit(wrapperNode, element.filterParams(wrapperFactoryName)); err != nil {
-				return nil, fmt.Errorf("cann't init wrapper %s, err: %v", element.Name, err)
+				return nil, fmt.Errorf("can't init wrapper %s, err: %v", element.Name, err)
 			}
 
 			if wrapper, ok := wrapperNode.(ogcore.Wrapper); ok {
@@ -141,6 +141,10 @@ func (builder *Builder) doInit(node any, params map[string]any) error {
 			return err
 		}
 	} else {
+		if len(params) == 0 {
+			return nil
+		}
+
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToIPHookFunc(),
