@@ -19,16 +19,11 @@ var ErrTimeout = errors.New("the running time exceeds the limit")
 type TimeoutWrapper struct {
 	ograph.BaseWrapper
 
-	Timeout string
+	Timeout time.Duration
 }
 
 func (wrapper *TimeoutWrapper) Run(ctx context.Context, state ogcore.State) error {
-	duration, err := time.ParseDuration(wrapper.Timeout)
-	if err != nil {
-		return fmt.Errorf("invalid timeout setting, error: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, duration)
+	ctx, cancel := context.WithTimeout(ctx, wrapper.Timeout)
 	defer cancel()
 
 	guardState := NewGuardState(state, func(key any) (flag int) {
@@ -46,17 +41,17 @@ func (wrapper *TimeoutWrapper) Run(ctx context.Context, state ogcore.State) erro
 		errCh <- err
 	}(ctx)
 
-	timer := time.NewTimer(duration)
+	timer := time.NewTimer(wrapper.Timeout)
 
 	select {
 	case err := <-errCh:
 		timer.Stop()
 		return err
 	case <-timer.C:
-		return fmt.Errorf("node failed after %s, error: %w", duration, ErrTimeout)
+		return fmt.Errorf("node failed after %s, error: %w", wrapper.Timeout, ErrTimeout)
 	}
 }
 
-func NewTimeoutWrapper(duration time.Duration) ogcore.Node {
-	return &TimeoutWrapper{Timeout: duration.String()}
+func NewTimeoutWrapper(timeout time.Duration) ogcore.Node {
+	return &TimeoutWrapper{Timeout: timeout}
 }
