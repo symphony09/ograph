@@ -1,6 +1,8 @@
 # Async Wrapper 异步执行
 
 > 用于异步执行被包装的节点
+>
+> Used for wrapping asynchronous nodes for concurrent execution
 
 ## 基本使用方式 | Basic Usage
 
@@ -29,9 +31,9 @@
 
 ## 参数 | Parameter
 
-| 参数名(Name) | 必需(Required) | 含义(Meaning) | 示例(Example) |
-| :----------- | :------------- | :------------ | :------------ |
-| -            | -              | -             | -             |
+| 参数名(Name) | 必需(Required) | 含义(Meaning) | 类型(Type) | 示例(Example) |
+| :----------- | :------------- | :------------ | ---------- | :------------ |
+| -            | -              | -             | -          | -             |
 
 
 
