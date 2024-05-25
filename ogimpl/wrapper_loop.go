@@ -2,6 +2,7 @@ package ogimpl
 
 import (
 	"context"
+	"time"
 
 	"github.com/symphony09/ograph"
 	"github.com/symphony09/ograph/ogcore"
@@ -14,7 +15,8 @@ var LoopWrapperFactory = func() ogcore.Node {
 type LoopWrapper struct {
 	ograph.BaseWrapper
 
-	LoopTimes int
+	LoopTimes    int
+	LoopInterval time.Duration
 }
 
 func (wrapper *LoopWrapper) Run(ctx context.Context, state ogcore.State) error {
@@ -26,6 +28,8 @@ func (wrapper *LoopWrapper) Run(ctx context.Context, state ogcore.State) error {
 		if err := wrapper.Node.Run(ctx, state); err != nil {
 			return err
 		}
+
+		time.Sleep(wrapper.LoopInterval)
 	}
 
 	return nil
