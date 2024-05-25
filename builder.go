@@ -69,11 +69,14 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 
 	var node ogcore.Node
 
+	factory := element.PrivateFactory
+	if factory == nil {
+		factory = builder.Factories.Get(element.FactoryName)
+	}
+
 	if element.Singleton != nil {
 		node = element.Singleton
-	} else if element.PrivateFactory != nil {
-		node = element.PrivateFactory()
-	} else if factory := builder.Factories.Get(element.FactoryName); factory != nil {
+	} else if factory != nil {
 		node = factory()
 
 		if err := builder.doInit(node, element.ParamsMap); err != nil {
