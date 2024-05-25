@@ -133,6 +133,33 @@ func TestAdvance_DumpDOT(t *testing.T) {
 	}
 }
 
+type CustomInitPerson struct {
+	FullName string
+}
+
+func (node *CustomInitPerson) Init(params map[string]any) error {
+	node.FullName = fmt.Sprintf("%v %v", params["FirstName"], params["LastName"])
+	return nil
+}
+
+func (node *CustomInitPerson) Run(ctx context.Context, state ogcore.State) error {
+	fmt.Println("Full name is:", node.FullName)
+	return nil
+}
+
+func TestAdvance_CustomInit(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+	e := ograph.NewElement("Person").
+		UsePrivateFactory(func() ogcore.Node {
+			return &CustomInitPerson{}
+		}).
+		Params("FirstName", "Jack").Params("LastName", "Chen")
+
+	if err := pipeline.Register(e).Run(context.TODO(), nil); err != nil {
+		t.Error(err)
+	}
+}
+
 func init() {
 	global.Factories.Add("Person", func() ogcore.Node { return &Person{} })
 }
