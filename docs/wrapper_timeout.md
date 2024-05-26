@@ -33,10 +33,16 @@ Timeout 支持两种类型的参数
 
 ## 小贴示 | Tips
 
-Timeout Wrapper 并不能控制节点停止运行和释放资源，只是通过 ctx 传递取消信号。同时向上报告超时错误，使 pipeline 可以不再等待节点运行结束。
+1. Timeout Wrapper 并不能控制节点停止运行和释放资源，只是通过 ctx 传递取消信号。同时向上报告超时错误，使 pipeline 可以不再等待节点运行结束。
 
-The Timeout Wrapper does not control node termination and resource release, but instead passes a cancel signal through ctx. It also reports a timeout error to allow the pipeline to proceed without waiting for the node.
+2. 在超时后，超时节点对state的写操作（set，update）将会失效。
 
-如果不希望超时错误影响 pipeline 继续执行，可以配合 Silent Wrapper 一起使用。
+3. 如果不希望超时错误影响 pipeline 继续执行，可以配合 Silent Wrapper 一起使用。
 
-To avoid allowing timeout errors to affect the pipeline's continued execution, you can use the Silent Wrapper in conjunction with the Timeout Wrapper.
+===
+
+1. The Timeout Wrapper does not control node termination and resource release, but instead passes a cancel signal through ctx. It also reports a timeout error to allow the pipeline to proceed without waiting for the node.
+
+2. After timeout, the failed timeout node's write operation (set, update) to state will fail.
+
+3. To avoid allowing timeout errors to affect the pipeline's continued execution, you can use the Silent Wrapper in conjunction with the Timeout Wrapper.
