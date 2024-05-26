@@ -11,7 +11,7 @@ const (
 	Condition = "Condition"
 	Loop      = "Loop"
 	Retry     = "Retry"
-	Slient    = "Slient"
+	Silent    = "Silent"
 	Timeout   = "Timeout"
 	Trace     = "Trace"
 	Delay     = "Delay"

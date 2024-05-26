@@ -9,14 +9,14 @@ import (
 	"github.com/symphony09/ograph/ogcore"
 )
 
-var SlientWrapperFactory = NewSlientWrapper
+var SilentWrapperFactory = NewSilentWrapper
 
-type SlientWrapper struct {
+type SilentWrapper struct {
 	ograph.BaseWrapper
 	*slog.Logger
 }
 
-func (wrapper *SlientWrapper) Run(ctx context.Context, state ogcore.State) error {
+func (wrapper *SilentWrapper) Run(ctx context.Context, state ogcore.State) error {
 	if wrapper.Logger == nil {
 		wrapper.Logger = slog.Default()
 	}
@@ -40,6 +40,6 @@ func (wrapper *SlientWrapper) Run(ctx context.Context, state ogcore.State) error
 	return nil
 }
 
-func NewSlientWrapper() ogcore.Node {
-	return &SlientWrapper{}
+func NewSilentWrapper() ogcore.Node {
+	return &SilentWrapper{}
 }

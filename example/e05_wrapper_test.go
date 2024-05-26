@@ -87,7 +87,7 @@ func TestWrapper_Compose(t *testing.T) {
 
 	flash := ograph.NewElement("Flash").UseNode(&Sloth{}).
 		Wrap(ogimpl.Timeout).Params("Timeout", "10ms").
-		Wrap(ogimpl.Slient).
+		Wrap(ogimpl.Silent).
 		Wrap(ogimpl.Trace)
 
 	pipeline.Register(flash)

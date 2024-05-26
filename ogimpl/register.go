@@ -15,7 +15,7 @@ func init() {
 	global.Factories.Add(Condition, ConditionWrapperFactory)
 	global.Factories.Add(Loop, LoopWrapperFactory)
 	global.Factories.Add(Retry, RetryWrapperFactory)
-	global.Factories.Add(Slient, SlientWrapperFactory)
+	global.Factories.Add(Silent, SilentWrapperFactory)
 	global.Factories.Add(Timeout, TimeoutWrapperFactory)
 	global.Factories.Add(Trace, TraceWrapperFactory)
 	global.Factories.Add(Delay, DelayWrapperFactory)
