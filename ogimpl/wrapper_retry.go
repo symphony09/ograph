@@ -26,7 +26,7 @@ func (wrapper *RetryWrapper) Run(ctx context.Context, state ogcore.State) error 
 
 	if err := wrapper.Node.Run(ctx, state); err != nil {
 		if wrapper.MaxRetryTimes <= 0 {
-			return err
+			wrapper.MaxRetryTimes = 1
 		}
 
 		nodeName := "unknown"
