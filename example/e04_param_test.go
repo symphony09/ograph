@@ -26,7 +26,7 @@ func TestParam(t *testing.T) {
 	// for auto set params, node must be a pointer to a map or struct.
 	pipeline.Builder.RegisterFactory("Speaker", func() ogcore.Node { return &Speaker{} })
 
-	zhangSan := ograph.NewElement("ZhangSan").UseFactory("Speaker").Params("Words", "Dont't be angry.")
+	zhangSan := ograph.NewElement("ZhangSan").UseFactory("Speaker").Params("Words", "Don't be angry.")
 	liSi := ograph.NewElement("LiSi").UseFactory("Speaker").Params("Words", "Be happy!")
 
 	pipeline.Register(zhangSan).Register(liSi)

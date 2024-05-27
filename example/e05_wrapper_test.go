@@ -106,7 +106,7 @@ func (wrapper *CustomWrapper) Run(ctx context.Context, state ogcore.State) error
 
 	wrapper.Node.Run(ctx, state)
 
-	fmt.Println("After node finsh")
+	fmt.Println("After node finish")
 
 	return nil
 }

@@ -142,8 +142,8 @@ func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
 }
 
 func (pipeline *Pipeline) DumpGraph() ([]byte, error) {
-	marsher := internal.NewGraphMarshaler(pipeline.graph)
-	return json.Marshal(marsher)
+	marshaler := internal.NewGraphMarshaler(pipeline.graph)
+	return json.Marshal(marshaler)
 }
 
 func (pipeline *Pipeline) LoadGraph(data []byte) error {
