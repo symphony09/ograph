@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"testing"
 	"time"
 
@@ -154,6 +156,19 @@ func TestAdvance_CustomInit(t *testing.T) {
 			return &CustomInitPerson{}
 		}).
 		Params("FirstName", "Jack").Params("LastName", "Chen")
+
+	if err := pipeline.Register(e).Run(context.TODO(), nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAdvance_CustomLog(t *testing.T) {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	pipeline := ograph.NewPipeline()
+	e := ograph.NewElement("ZhangSan").
+		UseNode(&Person{}).
+		Wrap(ogimpl.Trace)
 
 	if err := pipeline.Register(e).Run(context.TODO(), nil); err != nil {
 		t.Error(err)
