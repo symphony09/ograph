@@ -7,6 +7,7 @@ import (
 func init() {
 	global.Factories.Add(CMD, CmdNodeFactory)
 
+	global.Factories.Add(Queue, QueueClusterFactory)
 	global.Factories.Add(Choose, ChooseClusterFactory)
 	global.Factories.Add(Parallel, ParallelClusterFactory)
 	global.Factories.Add(Race, RaceClusterFactory)

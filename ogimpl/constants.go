@@ -3,6 +3,7 @@ package ogimpl
 const (
 	CMD = "CMD"
 
+	Queue    = "Queue"
 	Choose   = "Choose"
 	Parallel = "Parallel"
 	Race     = "Race"
