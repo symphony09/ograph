@@ -3,6 +3,7 @@ package ogimpl
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/symphony09/ograph"
 	"github.com/symphony09/ograph/ogcore"
@@ -17,6 +18,7 @@ type RetryWrapper struct {
 	*slog.Logger
 
 	MaxRetryTimes int
+	RetryDelay    *time.Duration
 }
 
 func (wrapper *RetryWrapper) Run(ctx context.Context, state ogcore.State) error {
@@ -36,6 +38,10 @@ func (wrapper *RetryWrapper) Run(ctx context.Context, state ogcore.State) error 
 		}
 
 		for i := wrapper.MaxRetryTimes; i > 0; i-- {
+			if wrapper.RetryDelay != nil {
+				time.Sleep(*wrapper.RetryDelay)
+			}
+
 			wrapper.Warn("retry failed node", "NodeName", nodeName, "Error", err)
 
 			if err := wrapper.Node.Run(ctx, state); err != nil {

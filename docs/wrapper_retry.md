@@ -32,9 +32,10 @@
 
 ## 参数 | Parameter
 
-| 参数名(Name)  | 必需(Required) | 含义(Meaning) | 类型(Type) | 示例(Example) |
-| :------------ | :------------- | :------------ | ---------- | :------------ |
-| MaxRetryTimes | ✗              | 最大重试次数  | int        | 3             |
+| 参数名(Name)  | 必需(Required) | 含义(Meaning) | 类型(Type)              | 示例(Example)       |
+| :------------ | :------------- | :------------ | ----------------------- | :------------------ |
+| MaxRetryTimes | ✗              | 最大重试次数  | int                     | 3                   |
+| RetryDelay    | ✗              | 重试延迟      | string<br>time.Duration | "1s"<br>time.Second |
 
 如果 MaxRetryTimes 小于或等于 0，则使用默认值 1。
 
