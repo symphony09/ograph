@@ -90,7 +90,7 @@ func TestHello(t *testing.T) {
 	liSi := ograph.NewElement("LiSi").UseNode(&Person{})
 
 	pipeline.Register(zhangSan).
-		Register(liSi, ograph.DependOn(zhangSan))
+		Register(liSi, ograph.Rely(zhangSan))
 
 	if err := pipeline.Run(context.TODO(), nil); err != nil {
 		t.Error(err)
@@ -109,19 +109,19 @@ func TestHello(t *testing.T) {
 
 更多示例代码，请参考 example 目录下代码。
 
-| 示例文件名                     | 示例说明                      |
-| :------------------------ | :------------------------ |
-| e01\_hello\_test.go       | 演示基本流程                    |
-| e02\_state\_test.go       | 演示如何在节点间分享状态数据            |
-| e03\_factory\_test.go     | 演示如何用工厂模式创建节点             |
-| e04\_param\_test.go       | 演示如何设置节点参数                |
-| e05\_wrapper\_test.go     | 演示如何使用 `wrapper` 增强节点功能   |
-| e06\_cluster\_test.go     | 演示如何使用 `cluster` 灵活调度多个节点 |
-| e07\_global\_test.go      | 演示如何全局注册工厂函数              |
-| e08\_virtual\_test.go     | 演示如何使用虚拟节点简化依赖关系          |
-| e09\_interrupter\_test.go | 演示如何在`pipeline`运行过程中插入中断  |
-| e10\_compose\_test.go     | 演示怎么组合嵌套`pipeline`        |
-| e11\_advance\_test.go     | 一些进阶用法，包含图校验、导出，池预热等      |
+| 示例文件名                | 示例说明                                 |
+| :------------------------ | :--------------------------------------- |
+| e01\_hello\_test.go       | 演示基本流程                             |
+| e02\_state\_test.go       | 演示如何在节点间分享状态数据             |
+| e03\_factory\_test.go     | 演示如何用工厂模式创建节点               |
+| e04\_param\_test.go       | 演示如何设置节点参数                     |
+| e05\_wrapper\_test.go     | 演示如何使用 `wrapper` 增强节点功能      |
+| e06\_cluster\_test.go     | 演示如何使用 `cluster` 灵活调度多个节点  |
+| e07\_global\_test.go      | 演示如何全局注册工厂函数                 |
+| e08\_virtual\_test.go     | 演示如何使用虚拟节点简化依赖关系         |
+| e09\_interrupter\_test.go | 演示如何在`pipeline`运行过程中插入中断   |
+| e10\_compose\_test.go     | 演示怎么组合嵌套`pipeline`               |
+| e11\_advance\_test.go     | 一些进阶用法，包含图校验、导出，池预热等 |
 
 
 ## Q&A

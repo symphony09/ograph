@@ -16,7 +16,7 @@ func TestComposePipeline(t *testing.T) {
 	relaxThings := ograph.NewElement("RelaxThings").UseNode(relax)
 
 	day := ograph.NewPipeline()
-	day.Register(studyThings).Register(relaxThings, ograph.DependOn(studyThings))
+	day.Register(studyThings).Register(relaxThings, ograph.Rely(studyThings))
 
 	if err := day.Run(context.TODO(), nil); err != nil {
 		t.Error(err)

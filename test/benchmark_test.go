@@ -22,8 +22,8 @@ func BenchmarkBase(b *testing.B) {
 	e4 := ograph.NewElement("c1").UseFactory("BC", e3)
 
 	pipeline.Register(e1).
-		Register(e2, ograph.DependOn(e1)).
-		Register(e4, ograph.DependOn(e2))
+		Register(e2, ograph.Rely(e1)).
+		Register(e4, ograph.Rely(e2))
 
 	b.ResetTimer()
 
@@ -91,7 +91,7 @@ func BenchmarkSerial_32(b *testing.B) {
 		if lastElem == nil {
 			pipeline.Register(elem)
 		} else {
-			pipeline.Register(elem, ograph.DependOn(lastElem))
+			pipeline.Register(elem, ograph.Rely(lastElem))
 		}
 
 		lastElem = elem
@@ -119,7 +119,7 @@ func BenchmarkSerial_32_Parallel(b *testing.B) {
 		if lastElem == nil {
 			pipeline.Register(elem)
 		} else {
-			pipeline.Register(elem, ograph.DependOn(lastElem))
+			pipeline.Register(elem, ograph.Rely(lastElem))
 		}
 
 		lastElem = elem
@@ -148,11 +148,11 @@ func BenchmarkComplex_6(b *testing.B) {
 	a, b1, b2, c1, c2, d := elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]
 
 	pipeline.Register(a).
-		Register(b1, ograph.DependOn(a)).
-		Register(b2, ograph.DependOn(b1)).
-		Register(c1, ograph.DependOn(a)).
-		Register(c2, ograph.DependOn(c1)).
-		Register(d, ograph.DependOn(b2, c2))
+		Register(b1, ograph.Rely(a)).
+		Register(b2, ograph.Rely(b1)).
+		Register(c1, ograph.Rely(a)).
+		Register(c2, ograph.Rely(c1)).
+		Register(d, ograph.Rely(b2, c2))
 
 	b.ResetTimer()
 
@@ -175,11 +175,11 @@ func BenchmarkComplex_6_Parallel(b *testing.B) {
 	a, b1, b2, c1, c2, d := elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]
 
 	pipeline.Register(a).
-		Register(b1, ograph.DependOn(a)).
-		Register(b2, ograph.DependOn(b1)).
-		Register(c1, ograph.DependOn(a)).
-		Register(c2, ograph.DependOn(c1)).
-		Register(d, ograph.DependOn(b2, c2))
+		Register(b1, ograph.Rely(a)).
+		Register(b2, ograph.Rely(b1)).
+		Register(c1, ograph.Rely(a)).
+		Register(c2, ograph.Rely(c1)).
+		Register(d, ograph.Rely(b2, c2))
 
 	b.ResetTimer()
 

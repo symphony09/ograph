@@ -2,7 +2,7 @@ package ograph
 
 type Op func(pipeline *Pipeline, element *Element)
 
-var DependOn = func(dependencies ...*Element) Op {
+var Rely = func(dependencies ...*Element) Op {
 	return func(pipeline *Pipeline, element *Element) {
 		for _, dep := range dependencies {
 			if pipeline.elements[dep.Name] == nil {

@@ -90,7 +90,7 @@ func TestHello(t *testing.T) {
 	liSi := ograph.NewElement("LiSi").UseNode(&Person{})
 
 	pipeline.Register(zhangSan).
-		Register(liSi, ograph.DependOn(zhangSan))
+		Register(liSi, ograph.Rely(zhangSan))
 
 	if err := pipeline.Run(context.TODO(), nil); err != nil {
 		t.Error(err)

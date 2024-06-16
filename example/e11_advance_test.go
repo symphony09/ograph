@@ -21,8 +21,8 @@ func TestAdvance_Check(t *testing.T) {
 	zhangSan := ograph.NewElement("ZhangSan").UseNode(&Person{})
 	liSi := ograph.NewElement("LiSi").UseNode(&Person{})
 
-	pipeline.Register(zhangSan, ograph.DependOn(liSi)).
-		Register(liSi, ograph.DependOn(zhangSan))
+	pipeline.Register(zhangSan, ograph.Rely(liSi)).
+		Register(liSi, ograph.Rely(zhangSan))
 
 	if err := pipeline.Check(); err == nil {
 		t.Error("unexpect nil err")
@@ -52,7 +52,7 @@ func TestAdvance_BatchOp(t *testing.T) {
 	liSi := ograph.NewElement("LiSi").UseNode(&Person{})
 
 	pipeline.Register(zhangSan).
-		Register(liSi, ograph.DependOn(zhangSan))
+		Register(liSi, ograph.Rely(zhangSan))
 
 	pipeline.ForEachElem(func(e *ograph.Element) { e.Wrap(ogimpl.Trace) })
 
@@ -89,7 +89,7 @@ func TestAdvance_DumpAndLoad(t *testing.T) {
 	liSi := ograph.NewElement("LiSi").UseFactory("Person")
 
 	pipeline.Register(zhangSan).
-		Register(liSi, ograph.DependOn(zhangSan))
+		Register(liSi, ograph.Rely(zhangSan))
 
 	if graphData, err := pipeline.DumpGraph(); err != nil {
 		t.Error(err)
@@ -126,7 +126,7 @@ func TestAdvance_DumpDOT(t *testing.T) {
 	end2.Implement(end, false)
 
 	pipeline.Register(begin, ograph.Then(c1, n3)).
-		Register(end, ograph.DependOn(c1, n3))
+		Register(end, ograph.Rely(c1, n3))
 
 	if data, err := pipeline.DumpDOT(); err != nil {
 		t.Error(err)

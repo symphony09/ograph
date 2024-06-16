@@ -21,7 +21,7 @@ func TestVirtual(t *testing.T) {
 
 	// A->C, A->D, B->C, B->D => (A, B)->V->(C, D)
 	pipeline.Register(middle,
-		ograph.DependOn(zhangShan, liSi),
+		ograph.Rely(zhangShan, liSi),
 		ograph.Then(WangWu, ZhaoLiu))
 
 	if err := pipeline.Run(context.TODO(), nil); err != nil {

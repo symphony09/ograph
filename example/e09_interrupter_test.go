@@ -20,9 +20,9 @@ func TestInterrupter(t *testing.T) {
 	flash := ograph.NewElement("Flash").UseNode(&Sloth{})
 
 	pipeline.Register(begin).
-		Register(zhangShan, ograph.DependOn(begin)).
-		Register(flash, ograph.DependOn(begin)).
-		Register(end, ograph.DependOn(zhangShan, flash))
+		Register(zhangShan, ograph.Rely(begin)).
+		Register(flash, ograph.Rely(begin)).
+		Register(end, ograph.Rely(zhangShan, flash))
 
 	pipeline.ParallelismLimit = 1
 
