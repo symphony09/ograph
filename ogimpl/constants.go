@@ -1,7 +1,8 @@
 package ogimpl
 
 const (
-	CMD = "CMD"
+	CMD     = "CMD"
+	HttpReq = "HttpReq"
 
 	Queue    = "Queue"
 	Choose   = "Choose"

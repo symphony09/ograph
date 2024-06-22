@@ -6,6 +6,7 @@ import (
 
 func init() {
 	global.Factories.Add(CMD, CmdNodeFactory)
+	global.Factories.Add(HttpReq, HttpReqNodeFactory)
 
 	global.Factories.Add(Queue, QueueClusterFactory)
 	global.Factories.Add(Choose, ChooseClusterFactory)
