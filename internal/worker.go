@@ -17,6 +17,7 @@ type WorkParams struct {
 	GorLimit         int
 	ActionsBeforeRun map[string]ogcore.Action
 	ActionsAfterRun  map[string]ogcore.Action
+	Profiler         *Profiler
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
@@ -51,7 +52,15 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 			}
 
 			if node != nil {
-				if err := node.Run(ctx, state); err != nil {
+				var err error
+
+				if params.Profiler != nil {
+					err = params.Profiler.ProxyRunNode(ctx, state, node, currentWorkName)
+				} else {
+					err = node.Run(ctx, state)
+				}
+
+				if err != nil {
 					return fmt.Errorf("%s failed, error: %w", work.Name, err)
 				}
 			}
