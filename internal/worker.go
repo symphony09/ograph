@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/symphony09/ograph/ogcore"
 	"golang.org/x/sync/errgroup"
@@ -17,6 +18,7 @@ type WorkParams struct {
 	GorLimit         int
 	ActionsBeforeRun map[string]ogcore.Action
 	ActionsAfterRun  map[string]ogcore.Action
+	Tracker          *ogcore.Tracker
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
@@ -42,6 +44,9 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 			currentWorkName = work.Name
 			node := work.Elem
 
+			tracker := params.Tracker
+			tracker.Record(currentWorkName, "ready", time.Now())
+
 			if params.ActionsBeforeRun != nil {
 				if action := params.ActionsBeforeRun[work.Name]; action != nil {
 					if err := action(ctx, state); err != nil {
@@ -50,11 +55,15 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 				}
 			}
 
+			tracker.Record(currentWorkName, "start", time.Now())
+
 			if node != nil {
 				if err := node.Run(ctx, state); err != nil {
 					return fmt.Errorf("%s failed, error: %w", work.Name, err)
 				}
 			}
+
+			tracker.Record(currentWorkName, "end", time.Now())
 
 			if params.ActionsAfterRun != nil {
 				if action := params.ActionsAfterRun[work.Name]; action != nil {
@@ -63,6 +72,8 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 					}
 				}
 			}
+
+			tracker.Record(currentWorkName, "complete", time.Now())
 		}
 
 		return nil

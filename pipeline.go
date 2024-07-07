@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/internal"
 	"github.com/symphony09/ograph/ogcore"
+	"github.com/symphony09/ograph/profile"
 )
 
 var ErrFactoryNotFound error = errors.New("factory not found")
@@ -16,6 +19,7 @@ var ErrFactoryNotFound error = errors.New("factory not found")
 type Pipeline struct {
 	BaseNode
 	Builder
+	*slog.Logger
 
 	graph    *PGraph
 	elements map[string]*Element
@@ -24,6 +28,8 @@ type Pipeline struct {
 	Interrupters     []ogcore.Interrupter
 	ParallelismLimit int
 	DisablePool      bool
+	EnableMonitor    bool
+	SlowThreshold    time.Duration
 }
 
 func (pipeline *Pipeline) Register(e *Element, ops ...Op) *Pipeline {
@@ -104,6 +110,19 @@ func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
 	}
 
 	params := pipeline.newWorkParams()
+	if pipeline.EnableMonitor {
+		start := time.Now()
+		params.Tracker = new(ogcore.Tracker)
+
+		defer func() {
+			if pipeline.SlowThreshold > 0 && time.Since(start) > pipeline.SlowThreshold {
+				go func() {
+					profiler := profile.NewProfiler(pipeline.graph, params.Tracker.TraceData)
+					pipeline.Logger.Warn("monitor slow execution", "Pipeline", pipeline.Name(), "SlowHint", profiler.GetSlowHint())
+				}()
+			}
+		}()
+	}
 
 	return worker.Work(ctx, state, params)
 }
@@ -166,5 +185,7 @@ func NewPipeline() *Pipeline {
 		elements: make(map[string]*Element),
 
 		ParallelismLimit: -1,
+
+		Logger: slog.Default(),
 	}
 }
