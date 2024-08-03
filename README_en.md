@@ -123,6 +123,28 @@ More examples can be found in the code under the "example" directory.
 | e10\_compose\_test.go     | Demonstrate how to combine nested `pipelines`.                                                         |
 | e11\_advance\_test.go     | Demonstrate some advanced usage, including graph verification, exporting, and preheating of pipelines. |
 
+## Ready-to-use
+
+The ograph provides some common node implementations:
+
+| Name      | Type         | Function                                                    | Documentation                                  |
+| :-------- | :----------- | ----------------------------------------------------------- | :--------------------------------------------- |
+| CMD       | General Node | Command execution                                           | [Documentation Link](docs/node_cmd.md)         |
+| HttpReq   | General Node | HTTP request                                                | [Documentation Link](docs/node_http_req.md)    |
+| Choose    | Cluster      | Select one node to execute from multiple nodes              | Work in progress                               |
+| Parallel  | Cluster      | Concurrent execution of multiple nodes                      | [Documentation Link](docs/cluster_parallel.md) |
+| Queue     | Cluster      | Sequential execution of multiple nodes in a queue           | [Documentation Link](docs/cluster_queue.md)    |
+| Race      | Cluster      | Concurrent nodes competing to execute                       | Work in progress                               |
+| Async     | Wrapper      | Asynchronous execution of the wrapped node                  | [Documentation Link](docs/wrapper_async.md)    |
+| Condition | Wrapper      | Conditionally determine whether to execute the wrapped node | Work in progress                               |
+| Debug     | Wrapper      | Debugging the wrapped node                                  | [Documentation Link](docs/wrapper_debug.md)    |
+| Delay     | Wrapper      | Delay the execution of the wrapped node                     | [Documentation Link](docs/wrapper_delay.md)    |
+| Loop      | Wrapper      | Loop the execution of the wrapped node                      | [Documentation Link](docs/wrapper_loop.md)     |
+| Retry     | Wrapper      | Retry failed nodes                                          | [Documentation Link](docs/wrapper_retry.md)    |
+| Silent    | Wrapper      | Suppress errors and failures of the node                    | [Documentation Link](docs/wrapper_silent.md)   |
+| Timeout   | Wrapper      | Node timeout control                                        | [Documentation Link](docs/wrapper_timeout.md)  |
+| Trace     | Wrapper      | Trace the execution process of the wrapped node             | [Documentation Link](docs/wrapper_trace.md)    |
+
 ## Q&A
 
 > What are the limitations of exporting and importing graphs?

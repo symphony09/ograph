@@ -123,6 +123,28 @@ func TestHello(t *testing.T) {
 | e10\_compose\_test.go     | 演示怎么组合嵌套`pipeline`               |
 | e11\_advance\_test.go     | 一些进阶用法，包含图校验、导出，池预热等 |
 
+## 开箱即用
+
+ograph 提供了一些比较通用的节点实现：
+
+| 名称      | 类型     | 作用                         | 文档                             |
+| :-------- | :------- | ---------------------------- | :------------------------------- |
+| CMD       | 普通节点 | 命令行执行                   | [链接](docs/node_cmd.md)         |
+| HttpReq   | 普通节点 | HTTP请求                     | [链接](docs/node_http_req.md)    |
+| Choose    | 簇       | 在多个节点中选择一个执行     | 施工中                           |
+| Parallel  | 簇       | 并发执行多个节点             | [链接](docs/cluster_parallel.md) |
+| Queue     | 簇       | 队列顺序执行多个节点         | [链接](docs/cluster_queue.md)    |
+| Race      | 簇       | 多个节点竞争执行             | 施工中                           |
+| Async     | 包装器   | 异步执行被包装节点           | [链接](docs/wrapper_async.md)    |
+| Condition | 包装器   | 按条件判断是否执行被包装节点 | 施工中                           |
+| Debug     | 包装器   | 调试被包装节点               | [链接](docs/wrapper_debug.md)    |
+| Delay     | 包装器   | 延迟执行被包装节点           | [链接](docs/wrapper_delay.md)    |
+| Loop      | 包装器   | 循环执行被包装节点           | [链接](docs/wrapper_loop.md)     |
+| Retry     | 包装器   | 重试失败节点                 | [链接](docs/wrapper_retry.md)    |
+| Silent    | 包装器   | 抑制节点报错失败             | [链接](docs/wrapper_silent.md)   |
+| Timeout   | 包装器   | 节点超时控制                 | [链接](docs/wrapper_timeout.md)  |
+| Trace     | 包装器   | 追踪被包装节点的执行过程     | [链接](docs/wrapper_trace.md)    |
+
 
 ## Q&A
 
