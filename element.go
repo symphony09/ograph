@@ -10,19 +10,19 @@ import (
 )
 
 type Element struct {
-	Virtual     bool
+	Virtual     bool `json:"Virtual,omitempty"`
 	Name        string
-	FactoryName string
-	Wrappers    []string
-	ParamsMap   map[string]any
-	DefaultImpl string
+	FactoryName string         `json:"FactoryName,omitempty"`
+	Wrappers    []string       `json:"Wrappers,omitempty"`
+	ParamsMap   map[string]any `json:"ParamsMap,omitempty"`
+	DefaultImpl string         `json:"DefaultImpl,omitempty"`
 
 	Singleton ogcore.Node `json:"-"`
 
 	PrivateFactory func() ogcore.Node `json:"-"`
 
-	SubElements  []*Element
-	ImplElements []*Element
+	SubElements  []*Element `json:"SubElements,omitempty"`
+	ImplElements []*Element `json:"ImplElements,omitempty"`
 }
 
 func (e *Element) SetVirtual(isVirtual bool) *Element {

@@ -159,6 +159,19 @@ func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
 
 func (pipeline *Pipeline) DumpGraph() ([]byte, error) {
 	marshaler := internal.NewGraphMarshaler(pipeline.graph)
+
+	for _, v := range pipeline.graph.Vertices {
+		if v.Elem.Singleton != nil {
+			if subPipeline, ok := v.Elem.Singleton.(*Pipeline); ok {
+				if marshaler.SubGraphs == nil {
+					marshaler.SubGraphs = make(map[string]*internal.GraphMarshaler[*Element])
+				}
+
+				marshaler.SubGraphs[v.Name] = internal.NewGraphMarshaler(subPipeline.graph)
+			}
+		}
+	}
+
 	return json.Marshal(marshaler)
 }
 
@@ -170,6 +183,14 @@ func (pipeline *Pipeline) LoadGraph(data []byte) error {
 	}
 
 	pipeline.graph = marshaler.GenerateGraph()
+
+	for name, subMarshaler := range marshaler.SubGraphs {
+		if v, ok := pipeline.graph.Vertices[name]; ok {
+			subPipeline := NewPipeline()
+			subPipeline.graph = subMarshaler.GenerateGraph()
+			v.Elem.Singleton = subPipeline
+		}
+	}
 
 	pipeline.ResetPool()
 

@@ -1,8 +1,10 @@
 package internal
 
 type GraphMarshaler[E any] struct {
-	Vertices map[string]E
-	Edges    [][2]string
+	Vertices map[string]E `json:"Vertices,omitempty"`
+	Edges    [][2]string  `json:"Edges,omitempty"`
+
+	SubGraphs map[string]*GraphMarshaler[E] `json:"SubGraphs,omitempty"`
 }
 
 func (marshaler GraphMarshaler[E]) GenerateGraph() *Graph[E] {
