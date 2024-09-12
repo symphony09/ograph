@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"log/slog"
 	"time"
 
@@ -25,7 +26,7 @@ type Pipeline struct {
 	elements map[string]*Element
 	pool     internal.WorkerPool
 
-	Interrupters     []ogcore.Interrupter
+	Interrupts       iter.Seq[string]
 	ParallelismLimit int
 	DisablePool      bool
 	EnableMonitor    bool
@@ -50,14 +51,6 @@ func (pipeline *Pipeline) ForEachElem(op func(e *Element)) *Pipeline {
 		op(e)
 	}
 
-	return pipeline
-}
-
-func (pipeline *Pipeline) RegisterInterrupt(handler ogcore.InterruptHandler, on ...string) *Pipeline {
-	pipeline.Interrupters = append(pipeline.Interrupters, ogcore.Interrupter{
-		Handler: handler,
-		Points:  on,
-	})
 	return pipeline
 }
 
@@ -155,7 +148,11 @@ func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
 		params.GorLimit = -1
 	}
 
-	params.ActionsBeforeRun, params.ActionsAfterRun = ogcore.GenActionsByIntr(pipeline.Interrupters)
+	if pipeline.Interrupts == nil {
+		params.Interrupts = func(yield func(string) bool) {}
+	} else {
+		params.Interrupts = pipeline.Interrupts
+	}
 
 	return params
 }

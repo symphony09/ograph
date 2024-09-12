@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"iter"
 	"runtime"
 	"time"
 
@@ -15,15 +16,19 @@ type Worker struct {
 }
 
 type WorkParams struct {
-	GorLimit         int
-	ActionsBeforeRun map[string]ogcore.Action
-	ActionsAfterRun  map[string]ogcore.Action
-	Tracker          *ogcore.Tracker
+	GorLimit   int
+	Tracker    *ogcore.Tracker
+	Interrupts iter.Seq[string]
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
 	todoCh, doneCh := worker.graph.Scheduling()
 	defer close(doneCh)
+
+	nextInterrupt, stopInterrupt := iter.Pull(params.Interrupts)
+	defer stopInterrupt()
+
+	interruptAt, doInterrupt := nextInterrupt()
 
 	doWorks := func(works []*GraphVertex[ogcore.Node]) (err error) {
 		var currentWorkName string
@@ -47,12 +52,8 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 			tracker := params.Tracker
 			tracker.Record(currentWorkName, "ready", time.Now())
 
-			if params.ActionsBeforeRun != nil {
-				if action := params.ActionsBeforeRun[work.Name]; action != nil {
-					if err := action(ctx, state); err != nil {
-						return fmt.Errorf("%s failed, error: %w", work.Name, err)
-					}
-				}
+			if doInterrupt && interruptAt == currentWorkName+":start" {
+				interruptAt, doInterrupt = nextInterrupt()
 			}
 
 			tracker.Record(currentWorkName, "start", time.Now())
@@ -65,12 +66,8 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 
 			tracker.Record(currentWorkName, "end", time.Now())
 
-			if params.ActionsAfterRun != nil {
-				if action := params.ActionsAfterRun[work.Name]; action != nil {
-					if err := action(ctx, state); err != nil {
-						return fmt.Errorf("%s failed, error: %w", work.Name, err)
-					}
-				}
+			if doInterrupt && interruptAt == work.Name+":end" {
+				interruptAt, doInterrupt = nextInterrupt()
 			}
 
 			tracker.Record(currentWorkName, "complete", time.Now())

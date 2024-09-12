@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/symphony09/ograph"
-	"github.com/symphony09/ograph/ogcore"
 )
 
 func TestInterrupter(t *testing.T) {
@@ -26,17 +25,12 @@ func TestInterrupter(t *testing.T) {
 
 	pipeline.ParallelismLimit = 1
 
-	handler := func(in ogcore.InterruptCtx, yield func(error) ogcore.InterruptCtx) error {
+	pipeline.Interrupts = func(yield func(string) bool) {
 		start := time.Now()
-
-		yield(nil)
-
+		yield("Begin:start")
+		yield("End:end")
 		fmt.Printf("[TimeCounter] Total time cost: %s\n", time.Since(start))
-
-		return nil
 	}
-
-	pipeline.RegisterInterrupt(handler, "Begin:before", "End:after")
 
 	if err := pipeline.Run(context.TODO(), nil); err != nil {
 		t.Error(err)

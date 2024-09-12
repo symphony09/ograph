@@ -1,6 +1,6 @@
 module github.com/symphony09/ograph
 
-go 1.21.0
+go 1.23
 
 require (
 	github.com/mitchellh/mapstructure v1.5.0
