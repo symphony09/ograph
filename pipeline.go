@@ -16,6 +16,7 @@ import (
 )
 
 var ErrFactoryNotFound error = errors.New("factory not found")
+var ErrSingletonNotSet error = errors.New("single node not set")
 
 type Pipeline struct {
 	BaseNode
@@ -60,11 +61,40 @@ func (pipeline *Pipeline) Check() error {
 		factories = global.Factories.Clone()
 	}
 
-	for _, vertex := range pipeline.graph.Vertices {
-		for factory := range vertex.Elem.GetRequiredFactories() {
-			if factories.Get(factory) == nil {
-				return fmt.Errorf("%w, name: %s", ErrFactoryNotFound, factory)
+	var elemCheck func(elem *Element) error
+	elemCheck = func(elem *Element) error {
+		if elem.FactoryName != "" {
+			if factories.Get(elem.FactoryName) == nil {
+				return fmt.Errorf("%w, name: %s", ErrFactoryNotFound, elem.FactoryName)
 			}
+
+			for _, subElem := range elem.SubElements {
+				if err := elemCheck(subElem); err != nil {
+					return err
+				}
+			}
+		} else if elem.Virtual {
+			for _, implElem := range elem.ImplElements {
+				if err := elemCheck(implElem); err != nil {
+					return err
+				}
+			}
+		} else {
+			if elem.Singleton == nil {
+				return fmt.Errorf("%w, name: %s", ErrSingletonNotSet, elem.Name)
+			} else if subPipeline, ok := elem.Singleton.(*Pipeline); ok {
+				if err := subPipeline.Check(); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+
+	for _, vertex := range pipeline.graph.Vertices {
+		if err := elemCheck(vertex.Elem); err != nil {
+			return err
 		}
 	}
 
