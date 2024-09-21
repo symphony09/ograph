@@ -177,12 +177,7 @@ func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
 	} else {
 		params.GorLimit = -1
 	}
-
-	if pipeline.Interrupts == nil {
-		params.Interrupts = func(yield func(string) bool) {}
-	} else {
-		params.Interrupts = pipeline.Interrupts
-	}
+	params.Interrupts = pipeline.Interrupts
 
 	return params
 }

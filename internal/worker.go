@@ -25,10 +25,19 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 	todoCh, doneCh := worker.graph.Scheduling()
 	defer close(doneCh)
 
-	nextInterrupt, stopInterrupt := iter.Pull(params.Interrupts)
-	defer stopInterrupt()
+	var nextInterrupt func() (string, bool)
+	var stopInterrupt func()
+	var interruptAt string
+	var doInterrupt bool
 
-	interruptAt, doInterrupt := nextInterrupt()
+	if params.Interrupts != nil {
+		nextInterrupt, stopInterrupt = iter.Pull(params.Interrupts)
+		defer stopInterrupt()
+
+		interruptAt, doInterrupt = nextInterrupt()
+	}
+
+	tracker := params.Tracker
 
 	doWorks := func(works []*GraphVertex[ogcore.Node]) (err error) {
 		var currentWorkName string
@@ -49,14 +58,19 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 			currentWorkName = work.Name
 			node := work.Elem
 
-			tracker := params.Tracker
-			tracker.Record(currentWorkName, "ready", time.Now())
-
-			if doInterrupt && interruptAt == currentWorkName+":start" {
-				interruptAt, doInterrupt = nextInterrupt()
+			if tracker != nil {
+				tracker.Record(currentWorkName, "ready", time.Now())
 			}
 
-			tracker.Record(currentWorkName, "start", time.Now())
+			if nextInterrupt != nil {
+				if doInterrupt && interruptAt == currentWorkName+":start" {
+					interruptAt, doInterrupt = nextInterrupt()
+				}
+			}
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "start", time.Now())
+			}
 
 			if node != nil {
 				if err := node.Run(ctx, state); err != nil {
@@ -64,13 +78,19 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 				}
 			}
 
-			tracker.Record(currentWorkName, "end", time.Now())
-
-			if doInterrupt && interruptAt == work.Name+":end" {
-				interruptAt, doInterrupt = nextInterrupt()
+			if tracker != nil {
+				tracker.Record(currentWorkName, "end", time.Now())
 			}
 
-			tracker.Record(currentWorkName, "complete", time.Now())
+			if nextInterrupt != nil {
+				if doInterrupt && interruptAt == work.Name+":end" {
+					interruptAt, doInterrupt = nextInterrupt()
+				}
+			}
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "complete", time.Now())
+			}
 		}
 
 		return nil
