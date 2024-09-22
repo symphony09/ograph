@@ -16,8 +16,9 @@ type Graph[E any] struct {
 
 	Heads        []*GraphVertex[E]
 	SerialGroups map[string][]*GraphVertex[E]
-	DoingMap     map[string]struct{}
 	ScheduleNum  int
+
+	doingCnt int
 
 	sync.Mutex
 }

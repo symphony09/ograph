@@ -30,7 +30,7 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 				v.Status = StatusDoing
 			}
 
-			graph.DoingMap[vertex.Name] = struct{}{}
+			graph.doingCnt++
 			todoCh <- group
 		}
 
@@ -43,27 +43,23 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 				v.Status = StatusDone
 			}
 
-			groupHead, groupTail := group[0], group[len(group)-1]
+			graph.doingCnt--
 
-			delete(graph.DoingMap, groupHead.Name)
-
-			nextGroups, allDone := graph.findTodo(groupTail)
+			nextGroups, allDone := graph.findTodo(group[len(group)-1])
 			if allDone {
 				close(todoCh)
 				return
 			} else {
-				for i := range nextGroups {
-					for _, group := range nextGroups {
-						if len(group) == 0 {
-							continue
-						}
-
-						for _, v := range group {
-							v.Status = StatusDoing
-						}
-
-						graph.DoingMap[group[0].Name] = struct{}{}
+				for i, group := range nextGroups {
+					if len(group) == 0 {
+						continue
 					}
+
+					for _, v := range group {
+						v.Status = StatusDoing
+					}
+
+					graph.doingCnt++
 
 					todoCh <- nextGroups[i]
 				}
@@ -79,12 +75,6 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 func (graph *Graph[E]) reset() {
 	for _, v := range graph.Heads {
 		graph.resetVertexStatus(v)
-	}
-
-	if graph.DoingMap == nil {
-		graph.DoingMap = map[string]struct{}{}
-	} else {
-		clear(graph.DoingMap)
 	}
 }
 
@@ -129,7 +119,7 @@ func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E]) ([][]*GraphVertex[E]
 		}
 	}
 
-	if len(vertexGroups) == 0 && len(graph.DoingMap) == 0 {
+	if len(vertexGroups) == 0 && graph.doingCnt == 0 {
 		return vertexGroups, true
 	}
 
