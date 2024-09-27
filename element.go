@@ -105,6 +105,16 @@ func (e *Element) filterParams(owner string) map[string]any {
 	return ret
 }
 
+type ElementOption func(e *Element)
+
+func (e *Element) Apply(options ...ElementOption) *Element {
+	for _, option := range options {
+		option(e)
+	}
+
+	return e
+}
+
 type PGraph = internal.Graph[*Element]
 
 func NewElement(name string) *Element {
