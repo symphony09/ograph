@@ -36,16 +36,6 @@ func (pipeline *Pipeline) dumpDOTNode(buf *bytes.Buffer, elem *Element, indent s
 
 	if elem.Virtual {
 		tags = append(tags, "Virtual Node")
-
-		if len(elem.ImplElements) > 0 {
-			var impls []string
-
-			for _, e := range elem.ImplElements {
-				impls = append(impls, e.Name)
-			}
-
-			tags = append(tags, "Implements: "+strings.Join(impls, ","))
-		}
 	} else if elem.FactoryName != "" {
 		tags = append(tags, fmt.Sprintf("Factory: %s", elem.FactoryName))
 

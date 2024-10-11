@@ -119,11 +119,6 @@ func TestAdvance_DumpDOT(t *testing.T) {
 	n3 := ograph.NewElement("Node_3").UseNode(&ograph.BaseNode{})
 
 	end := ograph.NewElement("End").AsVirtual()
-	end1 := ograph.NewElement("End_1").UseFactory("Node")
-	end2 := ograph.NewElement("End_2").UseFactory("Node")
-
-	end1.Implement(end, true)
-	end2.Implement(end, false)
 
 	pipeline.Register(begin, ograph.Then(c1, n3)).
 		Register(end, ograph.Rely(c1, n3))

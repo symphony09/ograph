@@ -20,8 +20,7 @@ type Element struct {
 
 	PrivateFactory func() ogcore.Node `json:"-"`
 
-	SubElements  []*Element `json:"SubElements,omitempty"`
-	ImplElements []*Element `json:"ImplElements,omitempty"`
+	SubElements []*Element `json:"SubElements,omitempty"`
 }
 
 func (e *Element) SetVirtual(isVirtual bool) *Element {
@@ -61,16 +60,6 @@ func (e *Element) UseFn(fn func() error) *Element {
 		Action: func(ctx context.Context, state ogcore.State) error {
 			return fn()
 		}}
-
-	return e
-}
-
-func (e *Element) Implement(virtualElem *Element, isDefault bool) *Element {
-	virtualElem.ImplElements = append(virtualElem.ImplElements, e)
-
-	if isDefault {
-		virtualElem.DefaultImpl = e.Name
-	}
 
 	return e
 }

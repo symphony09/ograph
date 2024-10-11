@@ -50,21 +50,7 @@ func (builder *Builder) build(graph *PGraph) (*internal.Worker, error) {
 
 func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 	if element.Virtual {
-		vn := &ogcore.VirtualNode{
-			VirtualName: element.Name,
-			DefaultImpl: element.DefaultImpl,
-			Implements:  make(map[string]ogcore.Node),
-		}
-
-		for _, impl := range element.ImplElements {
-			if node, err := builder.doBuild(impl); err != nil {
-				return nil, err
-			} else {
-				vn.Implements[impl.Name] = node
-			}
-		}
-
-		return vn, nil
+		return nil, nil
 	}
 
 	var node ogcore.Node

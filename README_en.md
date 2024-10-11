@@ -34,7 +34,7 @@ Like CGraph, OGraph also provides basic graph construction and scheduling execut
 
 *   Supports exporting graph structure and importing it for execution (within the constraints).
 
-*    Flexible virtual node settings to simplify dependencies, and to delay the execution of actual nodes until runtime, enabling polymorphism.
+*    Flexible virtual node settings to simplify dependencies.
 
 ### Performance Comparison
 

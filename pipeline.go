@@ -63,6 +63,10 @@ func (pipeline *Pipeline) Check() error {
 
 	var elemCheck func(elem *Element) error
 	elemCheck = func(elem *Element) error {
+		if elem.Virtual {
+			return nil
+		}
+
 		if elem.FactoryName != "" {
 			if factories.Get(elem.FactoryName) == nil {
 				return fmt.Errorf("%w, name: %s", ErrFactoryNotFound, elem.FactoryName)
@@ -70,12 +74,6 @@ func (pipeline *Pipeline) Check() error {
 
 			for _, subElem := range elem.SubElements {
 				if err := elemCheck(subElem); err != nil {
-					return err
-				}
-			}
-		} else if elem.Virtual {
-			for _, implElem := range elem.ImplElements {
-				if err := elemCheck(implElem); err != nil {
 					return err
 				}
 			}
