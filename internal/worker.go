@@ -22,20 +22,8 @@ type WorkParams struct {
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
-	todoCh, doneCh := worker.graph.Scheduling()
+	todoCh, doneCh := worker.graph.Scheduling(params.Interrupts)
 	defer close(doneCh)
-
-	var nextInterrupt func() (string, bool)
-	var stopInterrupt func()
-	var interruptAt string
-	var doInterrupt bool
-
-	if params.Interrupts != nil {
-		nextInterrupt, stopInterrupt = iter.Pull(params.Interrupts)
-		defer stopInterrupt()
-
-		interruptAt, doInterrupt = nextInterrupt()
-	}
 
 	tracker := params.Tracker
 
@@ -62,12 +50,6 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 				tracker.Record(currentWorkName, "ready", time.Now())
 			}
 
-			if nextInterrupt != nil {
-				if doInterrupt && interruptAt == currentWorkName+":start" {
-					interruptAt, doInterrupt = nextInterrupt()
-				}
-			}
-
 			if tracker != nil {
 				tracker.Record(currentWorkName, "start", time.Now())
 			}
@@ -80,12 +62,6 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 
 			if tracker != nil {
 				tracker.Record(currentWorkName, "end", time.Now())
-			}
-
-			if nextInterrupt != nil {
-				if doInterrupt && interruptAt == work.Name+":end" {
-					interruptAt, doInterrupt = nextInterrupt()
-				}
 			}
 
 			if tracker != nil {

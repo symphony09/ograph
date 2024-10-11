@@ -1,6 +1,10 @@
 package internal
 
-func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- []*GraphVertex[E]) {
+import (
+	"iter"
+)
+
+func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*GraphVertex[E], done chan<- []*GraphVertex[E]) {
 	todoCh := make(chan []*GraphVertex[E], 1+graph.ScheduleNum/2)
 	doneCh := make(chan []*GraphVertex[E], 1+graph.ScheduleNum/2)
 
@@ -10,7 +14,21 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 	go func() {
 		defer graph.Unlock()
 
-		if graph.SerialGroups == nil {
+		var nextInterrupt func() (string, bool)
+		var stopInterrupt func()
+		var interruptAt string
+		var doInterrupt bool
+
+		if interrupts != nil {
+			nextInterrupt, stopInterrupt = iter.Pull(interrupts)
+			defer stopInterrupt()
+
+			interruptAt, doInterrupt = nextInterrupt()
+		}
+
+		enableSerialGroup := interrupts == nil
+
+		if enableSerialGroup && graph.SerialGroups == nil {
 			graph.Optimize()
 		}
 
@@ -20,13 +38,21 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 		}
 
 		for _, vertex := range graph.Heads {
-			group := graph.SerialGroups[vertex.Name]
+			var group []*GraphVertex[E]
+
+			if enableSerialGroup {
+				group = graph.SerialGroups[vertex.Name]
+			}
 
 			if group == nil {
 				group = append(group, vertex)
 			}
 
 			for _, v := range group {
+				if doInterrupt && (interruptAt == vertex.Name+":start" || interruptAt == "*:start" || interruptAt == "*") {
+					interruptAt, doInterrupt = nextInterrupt()
+				}
+
 				v.Status = StatusDoing
 			}
 
@@ -40,12 +66,16 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 			}
 
 			for _, v := range group {
+				if doInterrupt && (interruptAt == v.Name+":end" || interruptAt == "*:end" || interruptAt == "*") {
+					interruptAt, doInterrupt = nextInterrupt()
+				}
+
 				v.Status = StatusDone
 			}
 
 			graph.doingCnt--
 
-			nextGroups, allDone := graph.findTodo(group[len(group)-1])
+			nextGroups, allDone := graph.findTodo(group[len(group)-1], enableSerialGroup)
 			if allDone {
 				close(todoCh)
 				return
@@ -56,6 +86,10 @@ func (graph *Graph[E]) Scheduling() (todo <-chan []*GraphVertex[E], done chan<- 
 					}
 
 					for _, v := range group {
+						if doInterrupt && (interruptAt == v.Name+":start" || interruptAt == "*:start" || interruptAt == "*") {
+							interruptAt, doInterrupt = nextInterrupt()
+						}
+
 						v.Status = StatusDoing
 					}
 
@@ -86,7 +120,7 @@ func (graph *Graph[E]) resetVertexStatus(vertex *GraphVertex[E]) {
 	}
 }
 
-func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E]) ([][]*GraphVertex[E], bool) {
+func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E], enableSerialGroup bool) ([][]*GraphVertex[E], bool) {
 	var vertexGroups [][]*GraphVertex[E]
 
 	if doneVertex != nil {
@@ -106,7 +140,7 @@ func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E]) ([][]*GraphVertex[E]
 			if !notReady {
 				var serialGroup []*GraphVertex[E]
 
-				if graph.SerialGroups != nil {
+				if enableSerialGroup && graph.SerialGroups != nil {
 					serialGroup = graph.SerialGroups[doneVertex.Next[i].Name]
 				}
 
