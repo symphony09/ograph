@@ -22,10 +22,55 @@ type WorkParams struct {
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
+	tracker := params.Tracker
+
+	// opt for graph that can be fully serialized
+	if worker.graph.ScheduleNum == 1 {
+		headNode := worker.graph.Heads[0]
+		var works []*GraphVertex[ogcore.Node]
+
+		if worker.graph.SerialGroups[headNode.Name] != nil {
+			works = worker.graph.SerialGroups[headNode.Name]
+		} else {
+			works = append(works, headNode)
+		}
+
+		for _, work := range works {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			currentWorkName := work.Name
+			node := work.Elem
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "ready", time.Now())
+			}
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "start", time.Now())
+			}
+
+			if node != nil {
+				if err := node.Run(ctx, state); err != nil {
+					return fmt.Errorf("%s failed, error: %w", work.Name, err)
+				}
+			}
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "end", time.Now())
+			}
+
+			if tracker != nil {
+				tracker.Record(currentWorkName, "complete", time.Now())
+			}
+		}
+		return nil
+	}
+
+	// schedule as normal
 	todoCh, doneCh := worker.graph.Scheduling(params.Interrupts)
 	defer close(doneCh)
-
-	tracker := params.Tracker
 
 	doWorks := func(works []*GraphVertex[ogcore.Node]) (err error) {
 		var currentWorkName string
