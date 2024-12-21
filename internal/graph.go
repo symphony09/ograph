@@ -15,6 +15,7 @@ type Graph[E any] struct {
 	Edges    map[GraphEdge[E]]bool
 
 	Heads        []*GraphVertex[E]
+	VertexSlice  []*GraphVertex[E]
 	SerialGroups map[string][]*GraphVertex[E]
 	ScheduleNum  int
 

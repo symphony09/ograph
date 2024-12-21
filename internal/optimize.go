@@ -2,10 +2,12 @@ package internal
 
 func (graph *Graph[E]) Optimize() {
 	graph.Heads = make([]*GraphVertex[E], 0)
+	graph.VertexSlice = make([]*GraphVertex[E], 0, len(graph.Vertices))
 	graph.SerialGroups = make(map[string][]*GraphVertex[E])
 	complexVertices := make(map[string]bool, 0)
 
 	for _, v := range graph.Vertices {
+		graph.VertexSlice = append(graph.VertexSlice, v)
 		if len(v.Dependencies) == 0 {
 			graph.Heads = append(graph.Heads, v)
 		}

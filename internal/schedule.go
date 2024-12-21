@@ -107,8 +107,14 @@ func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*G
 }
 
 func (graph *Graph[E]) reset() {
-	for _, v := range graph.Heads {
-		graph.resetVertexStatus(v)
+	if graph.VertexSlice != nil {
+		for _, v := range graph.VertexSlice {
+			v.Status = StatusTodo
+		}
+	} else {
+		for _, v := range graph.Heads {
+			graph.resetVertexStatus(v)
+		}
 	}
 }
 

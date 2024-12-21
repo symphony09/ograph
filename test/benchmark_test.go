@@ -191,3 +191,65 @@ func BenchmarkComplex_6_Parallel(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkConnect_8x8(b *testing.B) {
+	pipeline := ograph.NewPipeline()
+	pipeline.Builder.
+		RegisterFactory("BN", func() ogcore.Node { return &ograph.BaseNode{} })
+
+	layersCount := 8
+	layerNodesCount := 8
+
+	var curLayer, upperLayer []*ograph.Element
+
+	for i := 0; i < layersCount; i++ {
+		for j := 0; j < layerNodesCount; j++ {
+			el := ograph.NewElement(fmt.Sprintf("n%d", i*layersCount+j)).UseFactory("BN")
+			pipeline.Register(el, ograph.Rely(upperLayer...))
+			curLayer = append(curLayer, el)
+		}
+
+		upperLayer = curLayer
+		curLayer = []*ograph.Element{}
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkConnect_8x8_Parallel(b *testing.B) {
+	pipeline := ograph.NewPipeline()
+	pipeline.Builder.
+		RegisterFactory("BN", func() ogcore.Node { return &ograph.BaseNode{} })
+
+	layersCount := 8
+	layerNodesCount := 8
+
+	var curLayer, upperLayer []*ograph.Element
+
+	for i := 0; i < layersCount; i++ {
+		for j := 0; j < layerNodesCount; j++ {
+			el := ograph.NewElement(fmt.Sprintf("n%d", i*layersCount+j)).UseFactory("BN")
+			pipeline.Register(el, ograph.Rely(upperLayer...))
+			curLayer = append(curLayer, el)
+		}
+
+		upperLayer = curLayer
+		curLayer = []*ograph.Element{}
+	}
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			if err := pipeline.Run(context.TODO(), nil); err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
