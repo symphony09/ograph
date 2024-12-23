@@ -45,7 +45,7 @@ func BenchmarkConcurrent_32(b *testing.B) {
 		pipeline.Register(element)
 	}
 
-	// pipeline.ParallelismLimit = 1
+	pipeline.ParallelismLimit = 1
 
 	b.ResetTimer()
 
@@ -212,6 +212,8 @@ func BenchmarkConnect_8x8(b *testing.B) {
 		upperLayer = curLayer
 		curLayer = []*ograph.Element{}
 	}
+
+	pipeline.ParallelismLimit = 1
 
 	b.ResetTimer()
 
