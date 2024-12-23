@@ -38,30 +38,20 @@
 
 ### 性能对比
 
-经过 Benchmark 测试，OGraph 和 CGraph 的性能在同一水平。如果在 io 密集场景下，OGraph 更有优势。
+经过 Benchmark 测试，OGraph 总体上略优于 CGraph。
 
 [CGraph 性能测试参考](http://www.chunel.cn/archives/cgraph-compare-taskflow-v1)
 
-OGraph 性能测试参考
+[OGraph 性能测试参考](docs/benchmark_report.md)
 
-限制 8 核，三个场景（并发32节点，串行32节点，复杂情况模拟6节点）分别执行 100 w 次
 
-```bash
-cd test
-go test -bench='(Concurrent_32|Serial_32|Complex_6)$' -benchtime=1000000x -benchmem -cpu=8
-```
+|                | CGraph（基准）  | OGraph（本项目）        |
+| :------------- | :---------- | :----------------- |
+| 场景一（无连接32节点）   | 8204 ns/op  | 5595 ns/op（+46%）   |
+| 场景二（串行连接32节点）  | 572 ns/op   | 271.1 ns/op（+111%） |
+| 场景三（简单DAG 6节点） | 4042 ns/op  | 3136 ns/op（+29%）   |
+| 场景四（8x8全连接）    | 13450 ns/op | 16391 ns/op（-18%）  |
 
-输出结果
-
-    goos: linux
-    goarch: amd64
-    pkg: github.com/symphony09/ograph/test
-    cpu: AMD Ryzen 5 5600G with Radeon Graphics         
-    BenchmarkConcurrent_32-8         1000000              9669 ns/op            2212 B/op         64 allocs/op
-    BenchmarkSerial_32-8             1000000              1761 ns/op             712 B/op         15 allocs/op
-    BenchmarkComplex_6-8             1000000              3118 ns/op            1152 B/op         26 allocs/op
-    PASS
-    ok      github.com/symphony09/ograph/test       14.553s
 
 ## 快速开始
 
