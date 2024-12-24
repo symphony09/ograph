@@ -14,10 +14,11 @@ type Graph[E any] struct {
 	Vertices map[string]*GraphVertex[E]
 	Edges    map[GraphEdge[E]]bool
 
-	Heads        []*GraphVertex[E]
-	VertexSlice  []*GraphVertex[E]
-	SerialGroups map[string][]*GraphVertex[E]
-	ScheduleNum  int
+	Heads       []*GraphVertex[E]
+	VertexSlice []*GraphVertex[E]
+	ScheduleNum int
+
+	optimized bool
 
 	doingCnt int
 
@@ -37,6 +38,7 @@ type GraphVertex[E any] struct {
 
 	Dependencies []*GraphVertex[E]
 	Next         []*GraphVertex[E]
+	Group        []*GraphVertex[E]
 }
 
 func (graph *Graph[E]) AddVertex(name string, elem E) {

@@ -29,8 +29,8 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		headNode := worker.graph.Heads[0]
 		var works []*GraphVertex[ogcore.Node]
 
-		if worker.graph.SerialGroups[headNode.Name] != nil {
-			works = worker.graph.SerialGroups[headNode.Name]
+		if headNode.Group != nil {
+			works = headNode.Group
 		} else {
 			works = append(works, headNode)
 		}

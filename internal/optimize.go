@@ -3,7 +3,6 @@ package internal
 func (graph *Graph[E]) Optimize() {
 	graph.Heads = make([]*GraphVertex[E], 0)
 	graph.VertexSlice = make([]*GraphVertex[E], 0, len(graph.Vertices))
-	graph.SerialGroups = make(map[string][]*GraphVertex[E])
 	complexVertices := make(map[string]bool, 0)
 
 	for _, v := range graph.Vertices {
@@ -16,7 +15,11 @@ func (graph *Graph[E]) Optimize() {
 		}
 	}
 
+	var zipped int
+
 	for _, v := range graph.Vertices {
+		v.Group = []*GraphVertex[E]{v} // default group of vertex only contain it self
+
 		if !complexVertices[v.Name] {
 			var group []*GraphVertex[E]
 
@@ -37,17 +40,12 @@ func (graph *Graph[E]) Optimize() {
 			}
 
 			if len(group) > 1 {
-				graph.SerialGroups[group[0].Name] = group
+				group[0].Group = group // head vertex hold the group
+				zipped += len(group) - 1
 			}
 		}
 	}
 
-	var zipped int
-	for _, group := range graph.SerialGroups {
-		if len(group) > 1 {
-			zipped += len(group) - 1
-		}
-	}
-
 	graph.ScheduleNum = len(graph.Vertices) - zipped
+	graph.optimized = true
 }

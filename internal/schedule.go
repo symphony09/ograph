@@ -28,7 +28,7 @@ func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*G
 
 		enableSerialGroup := interrupts == nil
 
-		if enableSerialGroup && graph.SerialGroups == nil {
+		if !graph.optimized {
 			graph.Optimize()
 		}
 
@@ -38,14 +38,10 @@ func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*G
 		}
 
 		for _, vertex := range graph.Heads {
-			var group []*GraphVertex[E]
+			var group []*GraphVertex[E] = vertex.Group
 
-			if enableSerialGroup {
-				group = graph.SerialGroups[vertex.Name]
-			}
-
-			if group == nil {
-				group = append(group, vertex)
+			if !enableSerialGroup && len(group) > 1 {
+				group = group[:1]
 			}
 
 			for _, v := range group {
@@ -142,17 +138,13 @@ func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E], enableSerialGroup bo
 			}
 
 			if next.Wait == 0 {
-				var serialGroup []*GraphVertex[E]
+				group := doneVertex.Next[i].Group
 
-				if enableSerialGroup && graph.SerialGroups != nil {
-					serialGroup = graph.SerialGroups[doneVertex.Next[i].Name]
+				if !enableSerialGroup && len(group) > 1 {
+					group = group[:1]
 				}
 
-				if serialGroup != nil {
-					vertexGroups = append(vertexGroups, serialGroup)
-				} else {
-					vertexGroups = append(vertexGroups, []*GraphVertex[E]{doneVertex.Next[i]})
-				}
+				vertexGroups = append(vertexGroups, group)
 			}
 		}
 	}
