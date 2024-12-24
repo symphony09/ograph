@@ -32,6 +32,7 @@ type GraphEdge[E any] struct {
 type GraphVertex[E any] struct {
 	Name   string
 	Status int
+	Wait   int
 	Elem   E
 
 	Dependencies []*GraphVertex[E]

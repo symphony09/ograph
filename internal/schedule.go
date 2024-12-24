@@ -71,6 +71,10 @@ func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*G
 				}
 
 				v.Status = StatusDone
+
+				for _, next := range v.Next {
+					next.Wait--
+				}
 			}
 
 			graph.doingCnt--
@@ -110,6 +114,7 @@ func (graph *Graph[E]) reset() {
 	if graph.VertexSlice != nil {
 		for _, v := range graph.VertexSlice {
 			v.Status = StatusTodo
+			v.Wait = len(v.Dependencies)
 		}
 	} else {
 		for _, v := range graph.Heads {
@@ -120,6 +125,7 @@ func (graph *Graph[E]) reset() {
 
 func (graph *Graph[E]) resetVertexStatus(vertex *GraphVertex[E]) {
 	vertex.Status = StatusTodo
+	vertex.Wait = len(vertex.Dependencies)
 
 	for _, v := range vertex.Next {
 		graph.resetVertexStatus(v)
@@ -135,15 +141,7 @@ func (graph *Graph[E]) findTodo(doneVertex *GraphVertex[E], enableSerialGroup bo
 				continue
 			}
 
-			var notReady bool
-
-			for _, dep := range next.Dependencies {
-				if dep.Status != StatusDone {
-					notReady = true
-				}
-			}
-
-			if !notReady {
+			if next.Wait == 0 {
 				var serialGroup []*GraphVertex[E]
 
 				if enableSerialGroup && graph.SerialGroups != nil {
