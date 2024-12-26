@@ -2,11 +2,18 @@ package internal
 
 import (
 	"iter"
+	"runtime"
 )
 
-func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string]) (todo <-chan []*GraphVertex[E], done chan<- []*GraphVertex[E]) {
-	todoCh := make(chan []*GraphVertex[E], 1+graph.ScheduleNum/2)
-	doneCh := make(chan []*GraphVertex[E], 1+graph.ScheduleNum/2)
+func (graph *Graph[E]) Scheduling(interrupts iter.Seq[string], parallelismLimit int) (todo <-chan []*GraphVertex[E], done chan<- []*GraphVertex[E]) {
+	scheduleChanSize := 1 + graph.ScheduleNum/2
+
+	if parallelismLimit <= 0 {
+		scheduleChanSize = min(scheduleChanSize, runtime.GOMAXPROCS(0))
+	}
+
+	todoCh := make(chan []*GraphVertex[E], scheduleChanSize)
+	doneCh := make(chan []*GraphVertex[E], scheduleChanSize)
 
 	graph.Lock()
 	graph.reset()

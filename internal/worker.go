@@ -69,7 +69,7 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 	}
 
 	// schedule as normal
-	todoCh, doneCh := worker.graph.Scheduling(params.Interrupts)
+	todoCh, doneCh := worker.graph.Scheduling(params.Interrupts, params.GorLimit)
 	defer close(doneCh)
 
 	doWorks := func(works []*GraphVertex[ogcore.Node]) (err error) {
