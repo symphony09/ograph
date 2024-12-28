@@ -1,6 +1,6 @@
 # OGraph 性能测试报告
 
-## \[ 2024-12-23 ] OGraph VS CGraph
+## OGraph VS CGraph [ 20241228 updated ]
 
 ### 测试说明
 
@@ -37,12 +37,12 @@ CGraph 测试用例：[github.com/ChunelFeng/CGraph/test/Performance](https://gi
     goarch: amd64
     pkg: github.com/symphony09/ograph/test
     cpu: AMD Ryzen 5 5600G with Radeon Graphics         
-    BenchmarkConcurrent_32-8         1000000              5595 ns/op            1848 B/op         48 allocs/op
-    BenchmarkSerial_32-8             1000000               271.1 ns/op           120 B/op          4 allocs/op
-    BenchmarkComplex_6-8             1000000              3136 ns/op            1160 B/op         26 allocs/op
-    BenchmarkConnect_8x8-8           1000000             16391 ns/op            5586 B/op        108 allocs/op
+    BenchmarkConcurrent_32-8         1000000              4308 ns/op            1592 B/op         16 allocs/op
+    BenchmarkSerial_32-8             1000000               281.7 ns/op           120 B/op          4 allocs/op
+    BenchmarkComplex_6-8             1000000              2762 ns/op            1048 B/op         21 allocs/op
+    BenchmarkConnect_8x8-8           1000000              8333 ns/op            2553 B/op         16 allocs/op
     PASS
-    ok      github.com/symphony09/ograph/test       25.401s
+    ok      github.com/symphony09/ograph/test       15.692s
 
 #### CGraph
 
@@ -70,10 +70,10 @@ CGraph 4 个用例的 pipeline 执行次数分为 50w, 100w, 100w, 10w。
 
 |                | CGraph（基准）  | OGraph（本项目）        |
 | :------------- | :---------- | :----------------- |
-| 场景一（无连接32节点）   | 8204 ns/op  | 5595 ns/op（+46%）   |
-| 场景二（串行连接32节点）  | 572 ns/op   | 271.1 ns/op（+111%） |
-| 场景三（简单DAG 6节点） | 4042 ns/op  | 3136 ns/op（+29%）   |
-| 场景四（8x8全连接）    | 13450 ns/op | 16391 ns/op（-18%）  |
+| 场景一（无连接32节点）   | 8204 ns/op  | 4308 ns/op（+90.4%） |
+| 场景二（串行连接32节点）  | 572 ns/op   | 281.7 ns/op（+103%） |
+| 场景三（简单DAG 6节点） | 4042 ns/op  | 2762 ns/op（+46.3%） |
+| 场景四（8x8全连接）    | 13450 ns/op | 8333 ns/op（+61.4%） |
 
 从 4 个场景的测试用例结果来看，OGraph 与 CGraph 性能在同一量级，甚至在不少场景还能领先。
 
@@ -85,10 +85,10 @@ OGraph pipeline 支持并发执行，在相同场景下，并发测试结果如�
 
 |                | OGraph（pipeline 循环执行） | OGraph（pipeline 并行执行） |
 | :------------- | :-------------------- | :-------------------- |
-| 场景一（无连接32节点）   | 5595 ns/op            | 1703 ns/op（+229%）     |
-| 场景二（串行连接32节点）  | 271.1 ns/op           | 57.09 ns/op（+376%）    |
-| 场景三（简单DAG 6节点） | 3136 ns/op            | 756.5 ns/op（+315%）    |
-| 场景四（8x8全连接）    | 16391 ns/op           | 6611 ns/op（+148%）     |
+| 场景一（无连接32节点）   | 4308 ns/op            | 3138 ns/op（+37.2%）    |
+| 场景二（串行连接32节点）  | 281.7 ns/op           | 57.25 ns/op（+392%）    |
+| 场景三（简单DAG 6节点） | 2762 ns/op            | 747.8 ns/op（+269.3%）  |
+| 场景四（8x8全连接）    | 8333 ns/op            | 5136 ns/op（+62.2%）    |
 
 测试脚本： [ograph/test/benchmark\_parallel.sh at main · symphony09/ograph](https://github.com/symphony09/ograph/blob/main/test/benchmark_parallel.sh)
 
@@ -104,6 +104,6 @@ OGraph pipeline 支持并发执行，在相同场景下，并发测试结果如�
 
 【系统】Linux 6.11 - Fedora Workstation 41
 
-【OGraph】v0.6.0 - Go 1.23.4
+【OGraph】v0.6.1 - Go 1.23.4
 
 【CGraph】v2.6.2 - GCC14.2.1
