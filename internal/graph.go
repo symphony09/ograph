@@ -39,15 +39,29 @@ type GraphVertex[E any] struct {
 	Dependencies []*GraphVertex[E]
 	Next         []*GraphVertex[E]
 	Group        []*GraphVertex[E]
+
+	Priority int
+}
+
+type HasPriority interface {
+	GetPriority() int
 }
 
 func (graph *Graph[E]) AddVertex(name string, elem E) {
+	var priority int
+
+	if pe, ok := any(elem).(HasPriority); ok {
+		priority = pe.GetPriority()
+	}
+
 	graph.Vertices[name] = &GraphVertex[E]{
 		Name: name,
 		Elem: elem,
 
 		Dependencies: make([]*GraphVertex[E], 0),
 		Next:         make([]*GraphVertex[E], 0),
+
+		Priority: priority,
 	}
 }
 
@@ -83,6 +97,8 @@ func MapToNewGraph[OE any, NE any](graph *Graph[OE], mapper Mapper[OE, NE]) (*Gr
 
 				Dependencies: make([]*GraphVertex[NE], 0),
 				Next:         make([]*GraphVertex[NE], 0),
+
+				Priority: vertex.Priority,
 			}
 		}
 	}
