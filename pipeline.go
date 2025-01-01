@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/symphony09/ograph/global"
@@ -100,6 +101,66 @@ func (pipeline *Pipeline) Check() error {
 }
 
 func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
+	newCtx, newState, worker, params, err := pipeline.prepare(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	defer pipeline.afterRun(worker, params)
+
+	return worker.Work(newCtx, newState, params)
+}
+
+func (pipeline *Pipeline) AsyncRun(ctx context.Context, state ogcore.State) (pause, continueRun func(), wait func() error) {
+	pause, continueRun = func() {}, func() {}
+
+	newCtx, newState, worker, params, err := pipeline.prepare(ctx, state)
+	if err != nil {
+		wait = func() error {
+			return err
+		}
+		return
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		defer pipeline.afterRun(worker, params)
+		errCh <- worker.Work(newCtx, newState, params)
+	}()
+
+	params.ContinueCond = sync.NewCond(&sync.Mutex{})
+
+	pause = func() {
+		params.ContinueCond.L.Lock()
+		params.Pause = true
+		params.ContinueCond.L.Unlock()
+	}
+
+	continueRun = func() {
+		params.ContinueCond.L.Lock()
+		params.Pause = false
+		params.ContinueCond.L.Unlock()
+		params.ContinueCond.Broadcast()
+	}
+
+	wait = func() error {
+		return <-errCh
+	}
+
+	return
+}
+
+func (pipeline *Pipeline) prepare(ctx context.Context, state ogcore.State) (context.Context, ogcore.State,
+	*internal.Worker, *internal.WorkParams, error) {
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	if state == nil {
+		state = NewState()
+	}
+
 	var worker *internal.Worker
 
 	if !pipeline.DisablePool {
@@ -110,42 +171,40 @@ func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
 
 	if worker == nil {
 		if newWorker, err := pipeline.build(pipeline.graph); err != nil {
-			return err
+			return ctx, state, nil, nil, err
 		} else {
 			worker = newWorker
 		}
 	}
 
-	if !pipeline.DisablePool {
-		defer func() {
-			pipeline.pool.Put(worker)
-		}()
+	params := &internal.WorkParams{}
+	if pipeline.ParallelismLimit > 0 {
+		params.GorLimit = pipeline.ParallelismLimit
+	} else {
+		params.GorLimit = -1
 	}
-
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	if state == nil {
-		state = NewState()
-	}
-
-	params := pipeline.newWorkParams()
 	if pipeline.EnableMonitor {
-		start := time.Now()
 		params.Tracker = new(ogcore.Tracker)
+		params.Tracker.StartTime = time.Now()
+	}
+	params.Interrupts = pipeline.Interrupts
 
-		defer func() {
-			if pipeline.SlowThreshold > 0 && time.Since(start) > pipeline.SlowThreshold {
-				go func() {
-					profiler := profile.NewProfiler(pipeline.graph, params.Tracker.TraceData)
-					pipeline.Logger.Warn("monitor slow execution", "Pipeline", pipeline.Name(), "SlowHint", profiler.GetSlowHint())
-				}()
-			}
-		}()
+	return ctx, state, worker, params, nil
+}
+
+func (pipeline *Pipeline) afterRun(worker *internal.Worker, params *internal.WorkParams) {
+	if !pipeline.DisablePool {
+		pipeline.pool.Put(worker)
 	}
 
-	return worker.Work(ctx, state, params)
+	if pipeline.EnableMonitor {
+		if pipeline.SlowThreshold > 0 && time.Since(params.Tracker.StartTime) > pipeline.SlowThreshold {
+			go func() {
+				profiler := profile.NewProfiler(pipeline.graph, params.Tracker.TraceData)
+				pipeline.Logger.Warn("monitor slow execution", "Pipeline", pipeline.Name(), "SlowHint", profiler.GetSlowHint())
+			}()
+		}
+	}
 }
 
 func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
@@ -166,18 +225,6 @@ func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
 
 func (pipeline *Pipeline) ResetPool() {
 	pipeline.pool.Reset()
-}
-
-func (pipeline *Pipeline) newWorkParams() *internal.WorkParams {
-	params := &internal.WorkParams{}
-	if pipeline.ParallelismLimit > 0 {
-		params.GorLimit = pipeline.ParallelismLimit
-	} else {
-		params.GorLimit = -1
-	}
-	params.Interrupts = pipeline.Interrupts
-
-	return params
 }
 
 func (pipeline *Pipeline) DumpGraph() ([]byte, error) {

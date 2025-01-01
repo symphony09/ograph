@@ -3,6 +3,7 @@ package ogcore
 import "time"
 
 type Tracker struct {
+	StartTime time.Time
 	TraceData []EventTrace
 }
 
