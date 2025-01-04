@@ -29,3 +29,9 @@ func RetryOp(n int) ograph.ElementOption {
 		e.Wrap(Retry).Params("MaxRetryTimes", n)
 	}
 }
+
+func ConditionOp(expr string) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.Wrap(Condition).Params("ConditionExpr", expr)
+	}
+}
