@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -10,6 +11,42 @@ import (
 	"github.com/symphony09/ograph/ogcore"
 	"github.com/symphony09/ograph/ogimpl"
 )
+
+func TestCluster_Choose(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	var chosen string
+
+	a := ograph.NewElement("A").UseFn(func() error {
+		chosen = "A"
+		return nil
+	})
+	b := ograph.NewElement("B").UseFn(func() error {
+		chosen = "B"
+		return nil
+	})
+
+	race := ograph.NewElement("Cond").UseFactory(ogimpl.Choose, a, b).Params("ChooseExpr", "index")
+
+	pipeline.Register(race)
+
+	state := ograph.NewState()
+	state.Set("index", 1)
+
+	if err := pipeline.Run(context.TODO(), state); err != nil {
+		t.Error(err)
+	} else if chosen != "A" {
+		t.Error(errors.New("node A not ran when index equals 1"))
+	}
+
+	state.Set("index", 2)
+
+	if err := pipeline.Run(context.TODO(), state); err != nil {
+		t.Error(err)
+	} else if chosen != "B" {
+		t.Error(errors.New("node B not ran when index equals 2"))
+	}
+}
 
 func TestCluster_Parallel(t *testing.T) {
 	pipeline := ograph.NewPipeline()
