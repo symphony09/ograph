@@ -173,3 +173,50 @@ func TestAdvance_CustomLog(t *testing.T) {
 func init() {
 	global.Factories.Add("Person", func() ogcore.Node { return &Person{} })
 }
+
+type TxNode struct {
+	ograph.BaseNode
+}
+
+func (tx *TxNode) Run(ctx context.Context, state ogcore.State) error {
+	fmt.Println("run tx", tx.Name())
+	return nil
+}
+
+func (tx *TxNode) Commit() {
+	fmt.Println("commit tx", tx.Name())
+}
+
+func (tx *TxNode) Rollback() {
+	fmt.Println("rollback tx", tx.Name())
+}
+
+func TestAdvance_Transaction(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+	exceptErr := errors.New("except error")
+
+	n1 := ograph.NewElement("n1").UseFn(func() error {
+		return nil
+	})
+	n2 := ograph.NewElement("n2").UseFn(func() error {
+		fmt.Println("an error occurred")
+		return exceptErr
+	})
+	t1 := ograph.NewElement("t1").UseNode(&TxNode{})
+	t2 := ograph.NewElement("t2").UseNode(&TxNode{})
+
+	pipeline.Register(n1, ograph.Branch(t1, t2))
+
+	fmt.Println("[pipeline without error]")
+	if err := pipeline.Run(context.TODO(), nil); err != nil {
+		t.Error(err)
+	}
+
+	pipeline = ograph.NewPipeline()
+	pipeline.Register(n1, ograph.Branch(t1, n2, t2))
+
+	fmt.Println("[pipeline with error]")
+	if err := pipeline.Run(context.TODO(), nil); errors.Unwrap(err).Error() != "except error" {
+		t.Error(err)
+	}
+}

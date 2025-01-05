@@ -37,7 +37,12 @@ func (builder *Builder) build(graph *PGraph) (*internal.Worker, error) {
 		builder.Factories = global.Factories.Clone()
 	}
 
-	workGraph, err := internal.MapToNewGraph[*Element, ogcore.Node](graph, builder.doBuild)
+	txManager := internal.NewTransactionManager()
+
+	workGraph, err := internal.MapToNewGraph(graph, func(e *Element) (ogcore.Node, error) {
+		return builder.doBuild(e, txManager)
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +50,12 @@ func (builder *Builder) build(graph *PGraph) (*internal.Worker, error) {
 	workGraph.Optimize()
 
 	worker := internal.NewWorker(workGraph)
+	worker.SetTxManager(txManager)
+
 	return worker, nil
 }
 
-func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
+func (builder *Builder) doBuild(element *Element, txManager *internal.TransactionManager) (ogcore.Node, error) {
 	if element.Virtual {
 		return nil, nil
 	}
@@ -78,7 +85,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 						continue
 					}
 
-					if subNode, err := builder.doBuild(subElem); err != nil {
+					if subNode, err := builder.doBuild(subElem, txManager); err != nil {
 						return nil, err
 					} else {
 						subNodes = append(subNodes, subNode)
@@ -94,6 +101,10 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 
 	if nameable, ok := node.(ogcore.Nameable); ok {
 		nameable.SetName(element.Name)
+	}
+
+	if txNode, ok := node.(ogcore.Transactional); ok {
+		node = txManager.Manage(txNode)
 	}
 
 	if len(element.Wrappers) > 0 {

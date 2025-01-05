@@ -14,6 +14,8 @@ import (
 
 type Worker struct {
 	graph *Graph[ogcore.Node]
+
+	txManager *TransactionManager
 }
 
 type WorkParams struct {
@@ -25,7 +27,15 @@ type WorkParams struct {
 	ContinueCond *sync.Cond
 }
 
-func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
+func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) (err error) {
+	defer func() {
+		if err != nil {
+			worker.txManager.RollbackAll()
+		} else {
+			worker.txManager.CommitAll()
+		}
+	}()
+
 	tracker := params.Tracker
 
 	// opt for graph that can be fully serialized
@@ -170,9 +180,13 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		}
 	}
 
-	err := g.Wait()
+	err = g.Wait()
 
 	return err
+}
+
+func (worker *Worker) SetTxManager(manager *TransactionManager) {
+	worker.txManager = manager
 }
 
 func waitContinue(params *WorkParams) {

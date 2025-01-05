@@ -28,3 +28,9 @@ type Cloneable interface {
 type Initializeable interface {
 	Init(params map[string]any) error
 }
+
+type Transactional interface {
+	Node
+	Commit()
+	Rollback()
+}
