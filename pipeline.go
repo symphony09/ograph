@@ -101,12 +101,12 @@ func (pipeline *Pipeline) Check() error {
 }
 
 func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
-	newCtx, newState, worker, params, err := pipeline.prepare(ctx, state)
+	newCtx, newState, worker, params, afterRun, err := pipeline.prepare(ctx, state)
 	if err != nil {
 		return err
 	}
 
-	defer pipeline.afterRun(worker, params)
+	defer afterRun()
 
 	return worker.Work(newCtx, newState, params)
 }
@@ -114,7 +114,7 @@ func (pipeline *Pipeline) Run(ctx context.Context, state ogcore.State) error {
 func (pipeline *Pipeline) AsyncRun(ctx context.Context, state ogcore.State) (pause, continueRun func(), wait func() error) {
 	pause, continueRun = func() {}, func() {}
 
-	newCtx, newState, worker, params, err := pipeline.prepare(ctx, state)
+	newCtx, newState, worker, params, afterRun, err := pipeline.prepare(ctx, state)
 	if err != nil {
 		wait = func() error {
 			return err
@@ -124,7 +124,7 @@ func (pipeline *Pipeline) AsyncRun(ctx context.Context, state ogcore.State) (pau
 
 	errCh := make(chan error, 1)
 	go func() {
-		defer pipeline.afterRun(worker, params)
+		defer afterRun()
 		errCh <- worker.Work(newCtx, newState, params)
 	}()
 
@@ -151,7 +151,7 @@ func (pipeline *Pipeline) AsyncRun(ctx context.Context, state ogcore.State) (pau
 }
 
 func (pipeline *Pipeline) prepare(ctx context.Context, state ogcore.State) (context.Context, ogcore.State,
-	*internal.Worker, *internal.WorkParams, error) {
+	*internal.Worker, *internal.WorkParams, func(), error) {
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -161,17 +161,19 @@ func (pipeline *Pipeline) prepare(ctx context.Context, state ogcore.State) (cont
 		state = NewState()
 	}
 
+	pool := &pipeline.pool
+
 	var worker *internal.Worker
 
 	if !pipeline.DisablePool {
-		if poolWorker, ok := pipeline.pool.Get(); ok {
+		if poolWorker, ok := pool.Get(); ok {
 			worker = poolWorker
 		}
 	}
 
 	if worker == nil {
 		if newWorker, err := pipeline.build(pipeline.graph); err != nil {
-			return ctx, state, nil, nil, err
+			return ctx, state, nil, nil, nil, err
 		} else {
 			worker = newWorker
 		}
@@ -189,22 +191,22 @@ func (pipeline *Pipeline) prepare(ctx context.Context, state ogcore.State) (cont
 	}
 	params.Interrupts = pipeline.Interrupts
 
-	return ctx, state, worker, params, nil
-}
+	afterRun := func() {
+		if !pipeline.DisablePool {
+			pool.Put(worker)
+		}
 
-func (pipeline *Pipeline) afterRun(worker *internal.Worker, params *internal.WorkParams) {
-	if !pipeline.DisablePool {
-		pipeline.pool.Put(worker)
-	}
-
-	if pipeline.EnableMonitor {
-		if pipeline.SlowThreshold > 0 && time.Since(params.Tracker.StartTime) > pipeline.SlowThreshold {
-			go func() {
-				profiler := profile.NewProfiler(pipeline.graph, params.Tracker.TraceData)
-				pipeline.Logger.Warn("monitor slow execution", "Pipeline", pipeline.Name(), "SlowHint", profiler.GetSlowHint())
-			}()
+		if pipeline.EnableMonitor {
+			if pipeline.SlowThreshold > 0 && time.Since(params.Tracker.StartTime) > pipeline.SlowThreshold {
+				go func() {
+					profiler := profile.NewProfiler(pipeline.graph, params.Tracker.TraceData)
+					pipeline.Logger.Warn("monitor slow execution", "Pipeline", pipeline.Name(), "SlowHint", profiler.GetSlowHint())
+				}()
+			}
 		}
 	}
+
+	return ctx, state, worker, params, afterRun, nil
 }
 
 func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
