@@ -67,15 +67,17 @@ func (graph *Graph[E]) AddVertex(name string, elem E) {
 
 func (graph *Graph[E]) AddEdge(from, to string) {
 	if fromVertex, toVertex := graph.Vertices[from], graph.Vertices[to]; fromVertex != nil && toVertex != nil {
-		fromVertex.Next = append(fromVertex.Next, toVertex)
-		toVertex.Dependencies = append(toVertex.Dependencies, fromVertex)
-
 		edge := GraphEdge[E]{
 			From: fromVertex,
 			To:   toVertex,
 		}
 
-		graph.Edges[edge] = true
+		if !graph.Edges[edge] {
+			fromVertex.Next = append(fromVertex.Next, toVertex)
+			toVertex.Dependencies = append(toVertex.Dependencies, fromVertex)
+
+			graph.Edges[edge] = true
+		}
 	}
 }
 
