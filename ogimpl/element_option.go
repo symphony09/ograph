@@ -18,6 +18,12 @@ func LoopOp(n int) ograph.ElementOption {
 	}
 }
 
+func LoopWhileOp(expr string) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.Wrap(Loop).Params("ConditionExpr", expr)
+	}
+}
+
 func TimeoutOp(dur time.Duration) ograph.ElementOption {
 	return func(e *ograph.Element) {
 		e.Wrap(Timeout).Params("Timeout", dur)
