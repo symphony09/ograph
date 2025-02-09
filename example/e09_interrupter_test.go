@@ -27,8 +27,10 @@ func TestInterrupter(t *testing.T) {
 
 	pipeline.Interrupts = func(yield func(string) bool) {
 		start := time.Now()
-		yield("Begin:start")
-		yield("End:end")
+		if yield("Begin:start") {
+			yield("End:end")
+		}
+
 		fmt.Printf("[TimeCounter] Total time cost: %s\n", time.Since(start))
 	}
 

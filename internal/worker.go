@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/symphony09/ograph/ogcore"
@@ -13,15 +14,28 @@ import (
 
 type Worker struct {
 	graph *Graph[ogcore.Node]
+
+	txManager *TransactionManager
 }
 
 type WorkParams struct {
 	GorLimit   int
 	Tracker    *ogcore.Tracker
 	Interrupts iter.Seq[string]
+
+	Pause        bool
+	ContinueCond *sync.Cond
 }
 
-func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) error {
+func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) (err error) {
+	defer func() {
+		if err != nil {
+			worker.txManager.RollbackAll()
+		} else {
+			worker.txManager.CommitAll()
+		}
+	}()
+
 	tracker := params.Tracker
 
 	// opt for graph that can be fully serialized
@@ -36,6 +50,10 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		}
 
 		for _, work := range works {
+			if params.ContinueCond != nil {
+				waitContinue(params)
+			}
+
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
@@ -84,6 +102,10 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		}()
 
 		for _, work := range works {
+			if params.ContinueCond != nil {
+				waitContinue(params)
+			}
+
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
@@ -158,9 +180,23 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		}
 	}
 
-	err := g.Wait()
+	err = g.Wait()
 
 	return err
+}
+
+func (worker *Worker) SetTxManager(manager *TransactionManager) {
+	worker.txManager = manager
+}
+
+func waitContinue(params *WorkParams) {
+	params.ContinueCond.L.Lock()
+
+	for params.Pause {
+		params.ContinueCond.Wait()
+	}
+
+	params.ContinueCond.L.Unlock()
 }
 
 func NewWorker(graph *Graph[ogcore.Node]) *Worker {

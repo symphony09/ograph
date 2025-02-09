@@ -1,6 +1,10 @@
 package ogcore
 
-import "context"
+import (
+	"context"
+
+	"github.com/symphony09/eventd"
+)
 
 type Node interface {
 	Run(ctx context.Context, state State) error
@@ -27,4 +31,15 @@ type Cloneable interface {
 
 type Initializeable interface {
 	Init(params map[string]any) error
+}
+
+type Transactional interface {
+	Node
+	Commit()
+	Rollback()
+}
+
+type EventNode interface {
+	Node
+	AttachBus(bus *eventd.EventBus[State])
 }

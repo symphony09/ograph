@@ -15,6 +15,7 @@ type Element struct {
 	Wrappers    []string       `json:"Wrappers,omitempty"`
 	ParamsMap   map[string]any `json:"ParamsMap,omitempty"`
 	DefaultImpl string         `json:"DefaultImpl,omitempty"`
+	Priority    int            `json:"Priority,omitempty"`
 
 	Singleton ogcore.Node `json:"-"`
 
@@ -102,6 +103,15 @@ func (e *Element) Apply(options ...ElementOption) *Element {
 	}
 
 	return e
+}
+
+func (e *Element) SetPriority(priority int) *Element {
+	e.Priority = priority
+	return e
+}
+
+func (e *Element) GetPriority() int {
+	return e.Priority
 }
 
 type PGraph = internal.Graph[*Element]

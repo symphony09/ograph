@@ -1,9 +1,23 @@
 package internal
 
+import (
+	"slices"
+)
+
 func (graph *Graph[E]) Optimize() {
 	graph.Heads = make([]*GraphVertex[E], 0)
 	graph.VertexSlice = make([]*GraphVertex[E], 0, len(graph.Vertices))
 	complexVertices := make(map[string]bool, 0)
+
+	priorityCmpFn := func(v1 *GraphVertex[E], v2 *GraphVertex[E]) int {
+		if v1.Priority < v2.Priority {
+			return 1
+		} else if v1.Priority > v2.Priority {
+			return -1
+		} else {
+			return 0
+		}
+	}
 
 	for _, v := range graph.Vertices {
 		graph.VertexSlice = append(graph.VertexSlice, v)
@@ -13,6 +27,8 @@ func (graph *Graph[E]) Optimize() {
 		if len(v.Dependencies) > 1 || len(v.Next) > 1 {
 			complexVertices[v.Name] = true
 		}
+
+		slices.SortFunc(v.Next, priorityCmpFn)
 	}
 
 	var zipped int
@@ -45,6 +61,8 @@ func (graph *Graph[E]) Optimize() {
 			}
 		}
 	}
+
+	slices.SortFunc(graph.Heads, priorityCmpFn)
 
 	graph.ScheduleNum = len(graph.Vertices) - zipped
 	graph.optimized = true

@@ -12,6 +12,39 @@ import (
 	"github.com/symphony09/ograph/ogimpl"
 )
 
+func TestWrapper_Condition(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	ran := false
+
+	zhangSan := ograph.NewElement("ZhangSan").
+		UseFn(func() error {
+			ran = true
+			return nil
+		}).
+		Apply(ogimpl.ConditionOp("k == 2"))
+
+	pipeline.Register(zhangSan)
+
+	state := ograph.NewState()
+	state.Set("k", 1)
+
+	if err := pipeline.Run(context.TODO(), state); err != nil {
+		t.Error(err)
+	} else if ran == true {
+		t.Error(errors.New("node ran when k equals 1"))
+		return
+	}
+
+	state.Set("k", 2)
+
+	if err := pipeline.Run(context.TODO(), state); err != nil {
+		t.Error(err)
+	} else if ran != true {
+		t.Error(errors.New("node not ran when k equals 2"))
+	}
+}
+
 type Loser struct {
 	ograph.BaseNode
 }

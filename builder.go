@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/symphony09/eventd"
 	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/internal"
 	"github.com/symphony09/ograph/ogcore"
@@ -32,12 +33,17 @@ func (builder *Builder) RegisterFactory(name string, factory func() ogcore.Node)
 	return builder
 }
 
-func (builder *Builder) build(graph *PGraph) (*internal.Worker, error) {
+func (builder *Builder) build(graph *PGraph, eventBus *eventd.EventBus[ogcore.State]) (*internal.Worker, error) {
 	if builder.Factories == nil {
 		builder.Factories = global.Factories.Clone()
 	}
 
-	workGraph, err := internal.MapToNewGraph[*Element, ogcore.Node](graph, builder.doBuild)
+	txManager := internal.NewTransactionManager()
+
+	workGraph, err := internal.MapToNewGraph(graph, func(e *Element) (ogcore.Node, error) {
+		return builder.doBuild(e, txManager, eventBus)
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +51,12 @@ func (builder *Builder) build(graph *PGraph) (*internal.Worker, error) {
 	workGraph.Optimize()
 
 	worker := internal.NewWorker(workGraph)
+	worker.SetTxManager(txManager)
+
 	return worker, nil
 }
 
-func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
+func (builder *Builder) doBuild(element *Element, txManager *internal.TransactionManager, eventBus *eventd.EventBus[ogcore.State]) (ogcore.Node, error) {
 	if element.Virtual {
 		return nil, nil
 	}
@@ -78,7 +86,7 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 						continue
 					}
 
-					if subNode, err := builder.doBuild(subElem); err != nil {
+					if subNode, err := builder.doBuild(subElem, txManager, eventBus); err != nil {
 						return nil, err
 					} else {
 						subNodes = append(subNodes, subNode)
@@ -94,6 +102,14 @@ func (builder *Builder) doBuild(element *Element) (ogcore.Node, error) {
 
 	if nameable, ok := node.(ogcore.Nameable); ok {
 		nameable.SetName(element.Name)
+	}
+
+	if txNode, ok := node.(ogcore.Transactional); ok {
+		node = txManager.Manage(txNode)
+	}
+
+	if eventNode, ok := node.(ogcore.EventNode); ok {
+		eventNode.AttachBus(eventBus)
 	}
 
 	if len(element.Wrappers) > 0 {

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/symphony09/eventd"
 	"github.com/symphony09/ograph"
 	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/ogcore"
@@ -172,4 +173,77 @@ func TestAdvance_CustomLog(t *testing.T) {
 
 func init() {
 	global.Factories.Add("Person", func() ogcore.Node { return &Person{} })
+}
+
+type TxNode struct {
+	ograph.BaseNode
+}
+
+func (tx *TxNode) Run(ctx context.Context, state ogcore.State) error {
+	fmt.Println("run tx", tx.Name())
+	return nil
+}
+
+func (tx *TxNode) Commit() {
+	fmt.Println("commit tx", tx.Name())
+}
+
+func (tx *TxNode) Rollback() {
+	fmt.Println("rollback tx", tx.Name())
+}
+
+func TestAdvance_Transaction(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+	exceptErr := errors.New("except error")
+
+	n1 := ograph.NewElement("n1").UseFn(func() error {
+		return nil
+	})
+	n2 := ograph.NewElement("n2").UseFn(func() error {
+		fmt.Println("an error occurred")
+		return exceptErr
+	})
+	t1 := ograph.NewElement("t1").UseNode(&TxNode{})
+	t2 := ograph.NewElement("t2").UseNode(&TxNode{})
+
+	pipeline.Register(n1, ograph.Branch(t1, t2))
+
+	fmt.Println("[pipeline without error]")
+	if err := pipeline.Run(context.TODO(), nil); err != nil {
+		t.Error(err)
+	}
+
+	pipeline = ograph.NewPipeline()
+	pipeline.Register(n1, ograph.Branch(t1, n2, t2))
+
+	fmt.Println("[pipeline with error]")
+	if err := pipeline.Run(context.TODO(), nil); errors.Unwrap(err).Error() != "except error" {
+		t.Error(err)
+	}
+}
+
+type TEventNode struct {
+	ograph.BaseEventNode
+}
+
+func (node *TEventNode) Run(ctx context.Context, state ogcore.State) error {
+	state.Set("msg", "hi, it is a test event.")
+	node.Emit("test", state)
+	return nil
+}
+
+func TestAdvance_Event(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	pipeline.Subscribe(func(event string, obj ogcore.State) bool {
+		msg, _ := obj.Get("msg")
+		fmt.Printf("get message from %s event: %v\n", event, msg)
+		return true
+	}, eventd.On("test"))
+
+	pipeline.Register(ograph.NewElement("n").UseNode(&TEventNode{}))
+
+	if err := pipeline.Run(context.Background(), nil); err != nil {
+		t.Error(err)
+	}
 }

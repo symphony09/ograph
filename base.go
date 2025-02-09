@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/symphony09/eventd"
 	"github.com/symphony09/ograph/ogcore"
 )
 
@@ -91,6 +92,15 @@ func (wrapper *BaseWrapper) Wrap(node ogcore.Node) {
 
 func (wrapper BaseWrapper) Run(ctx context.Context, state ogcore.State) error {
 	return wrapper.Node.Run(ctx, state)
+}
+
+type BaseEventNode struct {
+	BaseNode
+	*eventd.EventBus[ogcore.State]
+}
+
+func (node *BaseEventNode) AttachBus(bus *eventd.EventBus[ogcore.State]) {
+	node.EventBus = bus
 }
 
 type BaseState struct {

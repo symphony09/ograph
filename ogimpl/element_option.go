@@ -18,6 +18,12 @@ func LoopOp(n int) ograph.ElementOption {
 	}
 }
 
+func LoopWhileOp(expr string) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.Wrap(Loop).Params("ConditionExpr", expr)
+	}
+}
+
 func TimeoutOp(dur time.Duration) ograph.ElementOption {
 	return func(e *ograph.Element) {
 		e.Wrap(Timeout).Params("Timeout", dur)
@@ -27,5 +33,11 @@ func TimeoutOp(dur time.Duration) ograph.ElementOption {
 func RetryOp(n int) ograph.ElementOption {
 	return func(e *ograph.Element) {
 		e.Wrap(Retry).Params("MaxRetryTimes", n)
+	}
+}
+
+func ConditionOp(expr string) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.Wrap(Condition).Params("ConditionExpr", expr)
 	}
 }
