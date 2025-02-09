@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/symphony09/eventd"
 	"github.com/symphony09/ograph"
 	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/ogcore"
@@ -217,6 +218,32 @@ func TestAdvance_Transaction(t *testing.T) {
 
 	fmt.Println("[pipeline with error]")
 	if err := pipeline.Run(context.TODO(), nil); errors.Unwrap(err).Error() != "except error" {
+		t.Error(err)
+	}
+}
+
+type TEventNode struct {
+	ograph.BaseEventNode
+}
+
+func (node *TEventNode) Run(ctx context.Context, state ogcore.State) error {
+	state.Set("msg", "hi, it is a test event.")
+	node.Emit("test", state)
+	return nil
+}
+
+func TestAdvance_Event(t *testing.T) {
+	pipeline := ograph.NewPipeline()
+
+	pipeline.Subscribe(func(event string, obj ogcore.State) bool {
+		msg, _ := obj.Get("msg")
+		fmt.Printf("get message from %s event: %v\n", event, msg)
+		return true
+	}, eventd.On("test"))
+
+	pipeline.Register(ograph.NewElement("n").UseNode(&TEventNode{}))
+
+	if err := pipeline.Run(context.Background(), nil); err != nil {
 		t.Error(err)
 	}
 }

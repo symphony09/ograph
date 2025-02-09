@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/symphony09/eventd"
 	"github.com/symphony09/ograph/global"
 	"github.com/symphony09/ograph/internal"
 	"github.com/symphony09/ograph/ogcore"
@@ -27,6 +28,7 @@ type Pipeline struct {
 	graph    *PGraph
 	elements map[string]*Element
 	pool     internal.WorkerPool
+	eventBus *eventd.EventBus[ogcore.State]
 
 	Interrupts       iter.Seq[string]
 	ParallelismLimit int
@@ -172,7 +174,7 @@ func (pipeline *Pipeline) prepare(ctx context.Context, state ogcore.State) (cont
 	}
 
 	if worker == nil {
-		if newWorker, err := pipeline.build(pipeline.graph); err != nil {
+		if newWorker, err := pipeline.build(pipeline.graph, pipeline.eventBus); err != nil {
 			return ctx, state, nil, nil, nil, err
 		} else {
 			worker = newWorker
@@ -214,7 +216,7 @@ func (pipeline *Pipeline) SetPoolCache(size int, warmup bool) error {
 
 	if warmup {
 		for i := 0; i < size; i++ {
-			if worker, err := pipeline.build(pipeline.graph); err != nil {
+			if worker, err := pipeline.build(pipeline.graph, pipeline.eventBus); err != nil {
 				return err
 			} else {
 				pipeline.pool.Put(worker)
@@ -269,10 +271,15 @@ func (pipeline *Pipeline) LoadGraph(data []byte) error {
 	return nil
 }
 
+func (pipeline *Pipeline) Subscribe(callback eventd.CallBack[ogcore.State], ops ...eventd.Op) (cancel func(), err error) {
+	return pipeline.eventBus.Subscribe(callback, ops...)
+}
+
 func NewPipeline() *Pipeline {
 	return &Pipeline{
 		graph:    internal.NewGraph[*Element](),
 		elements: make(map[string]*Element),
+		eventBus: new(eventd.EventBus[ogcore.State]),
 
 		ParallelismLimit: -1,
 
