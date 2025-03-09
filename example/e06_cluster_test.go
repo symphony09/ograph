@@ -26,25 +26,25 @@ func TestCluster_Choose(t *testing.T) {
 		return nil
 	})
 
-	race := ograph.NewElement("Cond").UseFactory(ogimpl.Choose, a, b).Params("ChooseExpr", "index")
+	race := ograph.NewElement("C").Apply(ogimpl.ChooseOp("choose_name=='a'?1:2", a, b))
 
 	pipeline.Register(race)
 
 	state := ograph.NewState()
-	state.Set("index", 1)
+	state.Set("choose_name", "a")
 
 	if err := pipeline.Run(context.TODO(), state); err != nil {
 		t.Error(err)
 	} else if chosen != "A" {
-		t.Error(errors.New("node A not ran when index equals 1"))
+		t.Error(errors.New("node A not ran when choose_name equals a"))
 	}
 
-	state.Set("index", 2)
+	state.Set("choose_name", "b")
 
 	if err := pipeline.Run(context.TODO(), state); err != nil {
 		t.Error(err)
 	} else if chosen != "B" {
-		t.Error(errors.New("node B not ran when index equals 2"))
+		t.Error(errors.New("node B not ran when choose_name equals b"))
 	}
 }
 

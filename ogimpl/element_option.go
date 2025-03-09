@@ -41,3 +41,9 @@ func ConditionOp(expr string) ograph.ElementOption {
 		e.Wrap(Condition).Params("ConditionExpr", expr)
 	}
 }
+
+func ChooseOp(expr string, candidates ...*ograph.Element) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.UseFactory(Choose, candidates...).Params("ChooseExpr", expr)
+	}
+}
