@@ -5,6 +5,7 @@ import (
 )
 
 func init() {
+	global.Factories.Add(Assert, AssertNodeFactory)
 	global.Factories.Add(CMD, CmdNodeFactory)
 	global.Factories.Add(HttpReq, HttpReqNodeFactory)
 

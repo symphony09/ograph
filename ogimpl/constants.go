@@ -1,6 +1,7 @@
 package ogimpl
 
 const (
+	Assert  = "Assert"
 	CMD     = "CMD"
 	HttpReq = "HttpReq"
 

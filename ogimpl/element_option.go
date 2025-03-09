@@ -47,3 +47,9 @@ func ChooseOp(expr string, candidates ...*ograph.Element) ograph.ElementOption {
 		e.UseFactory(Choose, candidates...).Params("ChooseExpr", expr)
 	}
 }
+
+func AssertOp(expr string) ograph.ElementOption {
+	return func(e *ograph.Element) {
+		e.UseFactory(Assert).Params("AssertExpr", expr)
+	}
+}
