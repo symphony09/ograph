@@ -45,12 +45,12 @@
 [OGraph 性能测试参考](docs/benchmark_report.md)
 
 
-|                | CGraph（基准）  | OGraph（本项目）        |
-| :------------- | :---------- | :----------------- |
-| 场景一（无连接32节点）   | 8204 ns/op  | 4308 ns/op（+90.4%） |
-| 场景二（串行连接32节点）  | 572 ns/op   | 281.7 ns/op（+103%） |
-| 场景三（简单DAG 6节点） | 4042 ns/op  | 2762 ns/op（+46.3%） |
-| 场景四（8x8全连接）    | 13450 ns/op | 8333 ns/op（+61.4%） |
+|                          | CGraph（基准） | OGraph（本项目）     |
+| :----------------------- | :------------- | :------------------- |
+| 场景一（无连接32节点）   | 8204 ns/op     | 4308 ns/op（+90.4%） |
+| 场景二（串行连接32节点） | 572 ns/op      | 281.7 ns/op（+103%） |
+| 场景三（简单DAG 6节点）  | 4042 ns/op     | 2762 ns/op（+46.3%） |
+| 场景四（8x8全连接）      | 13450 ns/op    | 8333 ns/op（+61.4%） |
 
 
 ## 快速开始
@@ -95,62 +95,7 @@ func TestHello(t *testing.T) {
     Hello, i am ZhangSan.
     Hello, i am LiSi.
 
-## 更多示例
+## 更多文档
 
-更多示例代码，请参考 example 目录下代码。
-
-| 示例文件名                | 示例说明                                 |
-| :------------------------ | :--------------------------------------- |
-| e01\_hello\_test.go       | 演示基本流程                             |
-| e02\_state\_test.go       | 演示如何在节点间分享状态数据             |
-| e03\_factory\_test.go     | 演示如何用工厂模式创建节点               |
-| e04\_param\_test.go       | 演示如何设置节点参数                     |
-| e05\_wrapper\_test.go     | 演示如何使用 `wrapper` 增强节点功能      |
-| e06\_cluster\_test.go     | 演示如何使用 `cluster` 灵活调度多个节点  |
-| e07\_global\_test.go      | 演示如何全局注册工厂函数                 |
-| e08\_virtual\_test.go     | 演示如何使用虚拟节点简化依赖关系         |
-| e09\_interrupter\_test.go | 演示如何在`pipeline`运行过程中插入中断   |
-| e10\_compose\_test.go     | 演示怎么组合嵌套`pipeline`               |
-| e11\_advance\_test.go     | 一些进阶用法，包含图校验、导出，池预热等 |
-
-## 开箱即用
-
-ograph 提供了一些比较通用的节点实现：
-
-| 名称      | 类型     | 作用                         | 文档                             |
-| :-------- | :------- | ---------------------------- | :------------------------------- |
-| CMD       | 普通节点 | 命令行执行                   | [链接](docs/node_cmd.md)         |
-| HttpReq   | 普通节点 | HTTP请求                     | [链接](docs/node_http_req.md)    |
-| Choose    | 簇       | 在多个节点中选择一个执行     | 施工中                           |
-| Parallel  | 簇       | 并发执行多个节点             | [链接](docs/cluster_parallel.md) |
-| Queue     | 簇       | 队列顺序执行多个节点         | [链接](docs/cluster_queue.md)    |
-| Race      | 簇       | 多个节点竞争执行             | 施工中                           |
-| Async     | 包装器   | 异步执行被包装节点           | [链接](docs/wrapper_async.md)    |
-| Condition | 包装器   | 按条件判断是否执行被包装节点 | 施工中                           |
-| Debug     | 包装器   | 调试被包装节点               | [链接](docs/wrapper_debug.md)    |
-| Delay     | 包装器   | 延迟执行被包装节点           | [链接](docs/wrapper_delay.md)    |
-| Loop      | 包装器   | 循环执行被包装节点           | [链接](docs/wrapper_loop.md)     |
-| Retry     | 包装器   | 重试失败节点                 | [链接](docs/wrapper_retry.md)    |
-| Silent    | 包装器   | 抑制节点报错失败             | [链接](docs/wrapper_silent.md)   |
-| Timeout   | 包装器   | 节点超时控制                 | [链接](docs/wrapper_timeout.md)  |
-| Trace     | 包装器   | 追踪被包装节点的执行过程     | [链接](docs/wrapper_trace.md)    |
-
-
-## Q&A
-
-> 导出导入图的限制是什么？
-
-所有节点需要是以工厂方式创建，导入图的 pipeline 需要已注册节点对应的工厂。
-
-> 为什么提供多种节点创建方式（UseNode，UseFactory，UseFn）？
-
-对于简单场景直接注册单例和运行函数比较方便，但要考虑 pipeline 并发执行问题和图导入导出时，就需要使用工厂方式。
-
-> State 存取是并发安全的吗？
-
-默认使用的 state 是并发安全的，但如果是使用了自定义实现则无法保证并发安全。
-
-> 怎么达到最佳性能，有最佳实践吗？
-
-由于协程轻量灵活，一般不用做调整优化，如果节点初始化比较慢可以考虑预热 worker 池。
+请前往 [https://symphony09.github.io/ograph-docs](https://symphony09.github.io/ograph-docs/zh/docs/quick-start/) 查看更多文档!
 
