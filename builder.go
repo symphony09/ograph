@@ -112,6 +112,13 @@ func (builder *Builder) doBuild(element *Element, txManager *internal.Transactio
 		eventNode.AttachBus(eventBus)
 	}
 
+	if pipeline, ok := node.(*Pipeline); ok {
+		pipeline.Subscribe(func(event string, obj ogcore.State) bool {
+			eventBus.Emit(event, obj)
+			return true
+		}, eventd.On(".*"))
+	}
+
 	if len(element.Wrappers) > 0 {
 		for _, wrapperFactoryName := range element.Wrappers {
 			var wrapperNode ogcore.Node
