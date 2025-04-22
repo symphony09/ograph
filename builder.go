@@ -119,8 +119,25 @@ func (builder *Builder) doBuild(element *Element, txManager *internal.Transactio
 		}, eventd.On(".*"))
 	}
 
+	seenWrapper := make(map[string]bool)
+
 	if len(element.Wrappers) > 0 {
-		for _, wrapperFactoryName := range element.Wrappers {
+		for _, wrapperName := range element.Wrappers {
+			// wrappers should be unique, avoid parameter confusion
+			if seenWrapper[wrapperName] {
+				continue
+			} else {
+				seenWrapper[wrapperName] = true
+			}
+
+			wrapperFactoryName := wrapperName
+
+			if element.WrapperAlias != nil {
+				if name := element.WrapperAlias[wrapperName]; name != "" {
+					wrapperFactoryName = name
+				}
+			}
+
 			var wrapperNode ogcore.Node
 
 			if factory := builder.Factories.Get(wrapperFactoryName); factory != nil {
@@ -133,7 +150,7 @@ func (builder *Builder) doBuild(element *Element, txManager *internal.Transactio
 				nameable.SetName(element.Name)
 			}
 
-			if err := builder.doInit(wrapperNode, element.filterParams(wrapperFactoryName)); err != nil {
+			if err := builder.doInit(wrapperNode, element.filterParams(wrapperName)); err != nil {
 				return nil, fmt.Errorf("can't init wrapper %s, err: %v", element.Name, err)
 			}
 

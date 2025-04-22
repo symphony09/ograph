@@ -17,6 +17,8 @@ type Element struct {
 	DefaultImpl string         `json:"DefaultImpl,omitempty"`
 	Priority    int            `json:"Priority,omitempty"`
 
+	WrapperAlias map[string]string `json:"WrapperAlias,omitempty"`
+
 	Singleton ogcore.Node `json:"-"`
 
 	PrivateFactory func() ogcore.Node `json:"-"`
@@ -48,6 +50,15 @@ func (e *Element) UsePrivateFactory(factory func() ogcore.Node, subElements ...*
 
 func (e *Element) Wrap(wrappers ...string) *Element {
 	e.Wrappers = append(e.Wrappers, wrappers...)
+	return e
+}
+
+func (e *Element) WrapByAlias(wrapper string, alias string) *Element {
+	if e.WrapperAlias == nil {
+		e.WrapperAlias = make(map[string]string)
+	}
+	e.WrapperAlias[alias] = wrapper
+	e.Wrap(alias)
 	return e
 }
 
