@@ -29,6 +29,8 @@ type LoopWrapper struct {
 func (wrapper *LoopWrapper) Init(params map[string]any) error {
 	if loopTimes, ok := params["LoopTimes"].(int); ok {
 		wrapper.LoopTimes = loopTimes
+	} else if loopTimes2, ok := params["LoopTimes"].(float64); ok {
+		wrapper.LoopTimes = int(loopTimes2)
 	}
 
 	if loopInterval, ok := params["LoopInterval"].(time.Duration); ok {
