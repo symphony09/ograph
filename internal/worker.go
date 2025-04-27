@@ -2,10 +2,12 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/symphony09/ograph/ogcore"
@@ -28,7 +30,13 @@ type WorkParams struct {
 }
 
 func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *WorkParams) (err error) {
+	var completedNum atomic.Uint32
+
 	defer func() {
+		if err == nil && completedNum.Load() < uint32(worker.graph.ScheduleNum) {
+			err = errors.New("some nodes cannot be run, please check whether there is a circular dependency")
+		}
+
 		if err != nil {
 			worker.txManager.RollbackAll()
 		} else {
@@ -40,6 +48,10 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 
 	// opt for graph that can be fully serialized
 	if worker.graph.ScheduleNum == 1 {
+		if len(worker.graph.Heads) == 0 {
+			return nil
+		}
+
 		headNode := worker.graph.Heads[0]
 		var works []*GraphVertex[ogcore.Node]
 
@@ -48,6 +60,16 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 		} else {
 			works = append(works, headNode)
 		}
+
+		var currentWorkName string
+
+		defer func() {
+			if info := recover(); info != nil {
+				err = fmt.Errorf("worker panic on %s, info: %v", currentWorkName, info)
+			}
+
+			completedNum.Add(1)
+		}()
 
 		for _, work := range works {
 			if params.ContinueCond != nil {
@@ -58,7 +80,7 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 				return ctx.Err()
 			}
 
-			currentWorkName := work.Name
+			currentWorkName = work.Name
 			node := work.Elem
 
 			if tracker != nil {
@@ -99,6 +121,7 @@ func (worker *Worker) Work(ctx context.Context, state ogcore.State, params *Work
 			}
 
 			doneCh <- works
+			completedNum.Add(1)
 		}()
 
 		for _, work := range works {
