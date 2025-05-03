@@ -261,6 +261,7 @@ func (pipeline *Pipeline) LoadGraph(data []byte) error {
 	for name, subMarshaler := range marshaler.SubGraphs {
 		if v, ok := pipeline.graph.Vertices[name]; ok {
 			subPipeline := NewPipeline()
+			subPipeline.Factories = pipeline.Factories
 			subPipeline.graph = subMarshaler.GenerateGraph()
 			v.Elem.Singleton = subPipeline
 		}
