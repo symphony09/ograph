@@ -104,12 +104,12 @@ func (builder *Builder) doBuild(element *Element, txManager *internal.Transactio
 		nameable.SetName(element.Name)
 	}
 
-	if txNode, ok := node.(ogcore.Transactional); ok {
-		node = txManager.Manage(txNode)
-	}
-
 	if eventNode, ok := node.(ogcore.EventNode); ok {
 		eventNode.AttachBus(eventBus)
+	}
+
+	if txNode, ok := node.(ogcore.Transactional); ok {
+		node = txManager.Manage(txNode)
 	}
 
 	if pipeline, ok := node.(*Pipeline); ok {
