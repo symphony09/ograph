@@ -120,18 +120,10 @@ func (graph *Graph[E]) reset() {
 			v.Wait = len(v.Dependencies)
 		}
 	} else {
-		for _, v := range graph.Heads {
-			graph.resetVertexStatus(v)
+		for _, v := range graph.Vertices {
+			v.Status = StatusTodo
+			v.Wait = len(v.Dependencies)
 		}
-	}
-}
-
-func (graph *Graph[E]) resetVertexStatus(vertex *GraphVertex[E]) {
-	vertex.Status = StatusTodo
-	vertex.Wait = len(vertex.Dependencies)
-
-	for _, v := range vertex.Next {
-		graph.resetVertexStatus(v)
 	}
 }
 
