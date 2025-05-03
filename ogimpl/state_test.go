@@ -1,4 +1,4 @@
-package test
+package ogimpl_test
 
 import (
 	"testing"
