@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -181,9 +182,14 @@ type stateKey string
 
 type TxNode struct {
 	BaseEventNode
+
+	ParameterX string
 }
 
 func (tx *TxNode) Run(ctx context.Context, state ogcore.State) error {
+	if tx.ParameterX != "x" {
+		return errors.New("wrong parameter")
+	}
 	exportState := NewState()
 	SavePrivateState[stateKey](exportState, "name", tx.Name(), true)
 	tx.Emit("running", exportState)
@@ -200,6 +206,10 @@ func (tx *TxNode) Rollback() {
 	state := NewState()
 	SaveState(state, "name", tx.Name(), true)
 	tx.Emit("rollback", state)
+}
+
+func (tx *TxNode) Clone() ogcore.Cloneable {
+	return &TxNode{ParameterX: tx.ParameterX}
 }
 
 type TSilent struct {
@@ -250,7 +260,7 @@ func TestPipeline_Run_3(t *testing.T) {
 	start := NewElement("start").AsVirtual()
 	transactionStart := NewElement("t_start").AsVirtual()
 
-	tx := NewElement("tx").UseNode(&TxNode{})
+	tx := NewElement("tx").UseNode(&TxNode{ParameterX: "x"})
 	tErr := NewElement("t_err").UseFn(func() error {
 		return errors.New("t_err")
 	})
@@ -267,9 +277,10 @@ func TestPipeline_Run_3(t *testing.T) {
 	p2.RegisterFactory("t", func() ogcore.Node {
 		return &TNode{}
 	})
+	p2.RegisterPrototype("tx", &TxNode{ParameterX: "x"})
 
 	t1 := NewElement("t1").UseFactory("t").Params("ParameterX", "1")
-	t2 := NewElement("t2").UseNode(&TxNode{})
+	t2 := NewElement("t2").UseFactory("tx")
 	c1 := NewElement("c1").UseFactory("cluster", t1, t2).Params("ParameterX", "x")
 
 	t3 := NewElement("t3").UseNode(NewFuncNode(func(ctx context.Context, state ogcore.State) error {
@@ -444,5 +455,41 @@ func TestPipeline_DumpAndLoadGraph(t *testing.T) {
 
 	if cnt != 2 {
 		t.Errorf("got cnt = %d, want 2", cnt)
+	}
+}
+
+func TestPipeline_DumpDOT(t *testing.T) {
+	p := NewPipeline()
+	p.SetName("dot_test")
+
+	p.RegisterFactory("c", func() ogcore.Node {
+		return &BaseCluster{}
+	})
+
+	start := NewElement("start").AsVirtual()
+
+	t1 := NewElement("t1").UseNode(&BaseNode{})
+	t2 := NewElement("t2").UseNode(&BaseNode{})
+	c1 := NewElement("c1").UseFactory("c", t1)
+
+	p.Register(start, Branch(c1, t2))
+
+	d, err := p.DumpDOT()
+	if err != nil {
+		t.Errorf("p.DumpDOT() got error = %v, want nil", err)
+	}
+
+	for _, exp := range []string{
+		`^digraph dot_test \{[\s\S]*\}`,
+		`start \[.*label="{Name: start\|Virtual Node}"\.*]`,
+		`c1 \[.*label="{Name: c1\|Factory: c\|Include: t1}"\.*]`,
+		`t2 \[.*label="{Name: t2\|Type: \*ograph.BaseNode}"\.*]`,
+		`start -> c1`,
+		`c1 -> t2`,
+	} {
+		re := regexp.MustCompile(exp)
+		if !re.Match(d) {
+			t.Errorf("match %s got false, want true", exp)
+		}
 	}
 }
