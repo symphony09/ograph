@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/symphony09/ograph"
@@ -49,28 +50,30 @@ func TestCluster_Choose(t *testing.T) {
 }
 
 func TestCluster_Parallel(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	var counters []*ograph.Element
+		var counters []*ograph.Element
 
-	for i := 0; i < 3; i++ {
-		counters = append(counters, ograph.NewElement("").UseFn(func() error {
-			for i := 0; i < 10; i++ {
-				fmt.Print(i)
-				time.Sleep(time.Millisecond)
-			}
-			return nil
-		}))
-	}
+		for i := 0; i < 3; i++ {
+			counters = append(counters, ograph.NewElement("").UseFn(func() error {
+				for i := 0; i < 10; i++ {
+					fmt.Print(i)
+					time.Sleep(time.Millisecond)
+				}
+				return nil
+			}))
+		}
 
-	parallelCounters := ograph.NewElement("ParallelCounters").
-		UseFactory(ogimpl.Parallel, counters...)
+		parallelCounters := ograph.NewElement("ParallelCounters").
+			UseFactory(ogimpl.Parallel, counters...)
 
-	pipeline.Register(parallelCounters)
+		pipeline.Register(parallelCounters)
 
-	if err := pipeline.Run(context.TODO(), nil); err != nil {
-		t.Error(err)
-	}
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			t.Error(err)
+		}
+	})
 }
 
 type Player struct {
@@ -87,23 +90,27 @@ func (player *Player) Run(ctx context.Context, state ogcore.State) error {
 }
 
 func TestCluster_Race(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	turtle := ograph.NewElement("Turtle").UseNode(&Player{Cost: 5 * time.Millisecond})
-	rabbit := ograph.NewElement("Rabbit").UseNode(&Player{Cost: 1 * time.Millisecond, Delay: 50 * time.Millisecond})
+		turtle := ograph.NewElement("Turtle").UseNode(&Player{Cost: 5 * time.Millisecond})
+		rabbit := ograph.NewElement("Rabbit").UseNode(&Player{Cost: 1 * time.Millisecond, Delay: 50 * time.Millisecond})
 
-	race := ograph.NewElement("Race").UseFactory(ogimpl.Race, turtle, rabbit).Wrap(ogimpl.Trace)
+		race := ograph.NewElement("Race").UseFactory(ogimpl.Race, turtle, rabbit).Wrap(ogimpl.Trace)
 
-	pipeline.Register(race)
+		pipeline.Register(race)
 
-	state := ograph.NewState()
+		state := ograph.NewState()
 
-	if err := pipeline.Run(context.TODO(), state); err != nil {
-		t.Error(err)
-	} else {
-		winner, _ := state.Get("Winner")
-		fmt.Println("Winner is", winner)
-	}
+		if err := pipeline.Run(context.TODO(), state); err != nil {
+			t.Error(err)
+		} else {
+			winner, _ := state.Get("Winner")
+			fmt.Println("Winner is", winner)
+		}
+
+		time.Sleep(time.Second)
+	})
 }
 
 type CustomCluster struct {

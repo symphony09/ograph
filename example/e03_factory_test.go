@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/symphony09/ograph"
@@ -27,18 +28,20 @@ func NewProductionX() ogcore.Node {
 }
 
 func TestFactory(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	pipeline.RegisterFactory("X", NewProductionX)
+		pipeline.RegisterFactory("X", NewProductionX)
 
-	x1 := ograph.NewElement("x1").UseFactory("X")
-	x2 := ograph.NewElement("x2").UseFactory("X")
+		x1 := ograph.NewElement("x1").UseFactory("X")
+		x2 := ograph.NewElement("x2").UseFactory("X")
 
-	pipeline.Register(x1).Register(x2)
+		pipeline.Register(x1).Register(x2)
 
-	if err := pipeline.Run(context.TODO(), nil); err != nil {
-		t.Error(err)
-	}
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			t.Error(err)
+		}
+	})
 }
 
 type Fakes struct{}

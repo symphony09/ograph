@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/symphony09/eventd"
@@ -145,37 +146,39 @@ func TestPipeline_Run_1(t *testing.T) {
 }
 
 func TestPipeline_Run_2(t *testing.T) {
-	p := NewPipeline()
-	p.EnableMonitor = true
-	p.SlowThreshold = 50 * time.Millisecond
+	synctest.Test(t, func(t *testing.T) {
+		p := NewPipeline()
+		p.EnableMonitor = true
+		p.SlowThreshold = 50 * time.Millisecond
 
-	t1 := NewElement("t1").UseFn(func() error {
-		time.Sleep(20 * time.Millisecond)
-		return nil
+		t1 := NewElement("t1").UseFn(func() error {
+			time.Sleep(20 * time.Millisecond)
+			return nil
+		})
+
+		t2 := NewElement("t2").UseFn(func() error {
+			time.Sleep(30 * time.Millisecond)
+			return nil
+		})
+
+		p.Register(t1).Register(t2)
+
+		if err := p.Run(context.Background(), nil); err != nil {
+			t.Errorf("p.Run() got error = %v, want nil", err)
+		}
+
+		p.ParallelismLimit = 1
+
+		startTime := time.Now()
+
+		if err := p.Run(context.Background(), nil); err != nil {
+			t.Errorf("p.Run() got error = %v, want nil", err)
+		}
+
+		if cost := time.Since(startTime); cost < 50*time.Millisecond {
+			t.Errorf("p.Run() cost time = %v, want more than 50ms", cost)
+		}
 	})
-
-	t2 := NewElement("t2").UseFn(func() error {
-		time.Sleep(30 * time.Millisecond)
-		return nil
-	})
-
-	p.Register(t1).Register(t2)
-
-	if err := p.Run(context.Background(), nil); err != nil {
-		t.Errorf("p.Run() got error = %v, want nil", err)
-	}
-
-	p.ParallelismLimit = 1
-
-	startTime := time.Now()
-
-	if err := p.Run(context.Background(), nil); err != nil {
-		t.Errorf("p.Run() got error = %v, want nil", err)
-	}
-
-	if cost := time.Since(startTime); cost < 50*time.Millisecond {
-		t.Errorf("p.Run() cost time = %v, want more than 50ms", cost)
-	}
 }
 
 type stateKey string
@@ -341,45 +344,47 @@ func TestPipeline_Run_3(t *testing.T) {
 }
 
 func TestPipeline_AsyncRun(t *testing.T) {
-	p := NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		p := NewPipeline()
 
-	f := func() error {
+		f := func() error {
+			time.Sleep(20 * time.Millisecond)
+			return nil
+		}
+
+		t1 := NewElement("t1").UseFn(f)
+		t2 := NewElement("t2").UseFn(f)
+
+		p.Register(t1, Then(t2))
+
+		startTime := time.Now()
+
+		pause, continueRun, wait := p.AsyncRun(context.Background(), nil)
+
+		time.Sleep(10 * time.Millisecond)
+
+		pause()
+
 		time.Sleep(20 * time.Millisecond)
-		return nil
-	}
 
-	t1 := NewElement("t1").UseFn(f)
-	t2 := NewElement("t2").UseFn(f)
+		continueRun()
 
-	p.Register(t1, Then(t2))
+		if err := wait(); err != nil {
+			t.Errorf("wait() got error = %v, want nil", err)
+		}
 
-	startTime := time.Now()
+		if cost := time.Since(startTime); cost < 50*time.Millisecond {
+			t.Errorf("p.Run() cost time = %v, want more than 50ms", cost)
+		}
 
-	pause, continueRun, wait := p.AsyncRun(context.Background(), nil)
+		p2 := NewPipeline()
+		p2.Register(NewElement("t1").UseFactory("fake_factory"))
 
-	time.Sleep(10 * time.Millisecond)
-
-	pause()
-
-	time.Sleep(20 * time.Millisecond)
-
-	continueRun()
-
-	if err := wait(); err != nil {
-		t.Errorf("wait() got error = %v, want nil", err)
-	}
-
-	if cost := time.Since(startTime); cost < 50*time.Millisecond {
-		t.Errorf("p.Run() cost time = %v, want more than 50ms", cost)
-	}
-
-	p2 := NewPipeline()
-	p2.Register(NewElement("t1").UseFactory("fake_factory"))
-
-	_, _, wait = p2.AsyncRun(context.Background(), nil)
-	if err := wait(); err == nil {
-		t.Error("wait() got error = nil, want not nil")
-	}
+		_, _, wait = p2.AsyncRun(context.Background(), nil)
+		if err := wait(); err == nil {
+			t.Error("wait() got error = nil, want not nil")
+		}
+	})
 }
 
 func TestPipeline_Pool(t *testing.T) {

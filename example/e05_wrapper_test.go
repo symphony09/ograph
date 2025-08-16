@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/symphony09/ograph"
@@ -98,36 +99,44 @@ func (sloth *Sloth) Run(ctx context.Context, state ogcore.State) error {
 }
 
 func TestWrapper_Timeout(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	flash := ograph.NewElement("Flash").UseNode(&Sloth{}).
-		Wrap(ogimpl.Timeout).Params("Timeout", "10ms")
+		flash := ograph.NewElement("Flash").UseNode(&Sloth{}).
+			Wrap(ogimpl.Timeout).Params("Timeout", "10ms")
 
-	pipeline.Register(flash)
+		pipeline.Register(flash)
 
-	start := time.Now()
+		start := time.Now()
 
-	err := pipeline.Run(context.TODO(), nil)
-	if errors.Is(err, ogimpl.ErrTimeout) {
-		fmt.Printf("time cost: %s\n", time.Since(start))
-	} else {
-		t.Error(err)
-	}
+		err := pipeline.Run(context.TODO(), nil)
+		if errors.Is(err, ogimpl.ErrTimeout) {
+			fmt.Printf("time cost: %s\n", time.Since(start))
+		} else {
+			t.Error(err)
+		}
+
+		time.Sleep(time.Second)
+	})
 }
 
 func TestWrapper_Compose(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	flash := ograph.NewElement("Flash").UseNode(&Sloth{}).
-		Wrap(ogimpl.Timeout).Params("Timeout", "10ms").
-		Wrap(ogimpl.Silent).
-		Wrap(ogimpl.Trace)
+		flash := ograph.NewElement("Flash").UseNode(&Sloth{}).
+			Wrap(ogimpl.Timeout).Params("Timeout", "10ms").
+			Wrap(ogimpl.Silent).
+			Wrap(ogimpl.Trace)
 
-	pipeline.Register(flash)
+		pipeline.Register(flash)
 
-	if err := pipeline.Run(context.TODO(), nil); err != nil {
-		t.Error(err)
-	}
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			t.Error(err)
+		}
+
+		time.Sleep(time.Second)
+	})
 }
 
 type CustomWrapper struct {

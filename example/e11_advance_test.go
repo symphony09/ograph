@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/symphony09/eventd"
@@ -63,24 +64,26 @@ func TestAdvance_BatchOp(t *testing.T) {
 }
 
 func TestAdvance_WarmUp(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	pipeline.RegisterFactory("SlowReady", func() ogcore.Node {
-		time.Sleep(time.Millisecond * 50)
-		return &Person{}
+		pipeline.RegisterFactory("SlowReady", func() ogcore.Node {
+			time.Sleep(time.Millisecond * 50)
+			return &Person{}
+		})
+
+		zhangSan := ograph.NewElement("ZhangSan").UseFactory("SlowReady")
+
+		pipeline.Register(zhangSan).SetPoolCache(1, true)
+
+		start := time.Now()
+
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			t.Error(err)
+		} else {
+			fmt.Printf("time cost: %s\n", time.Since(start))
+		}
 	})
-
-	zhangSan := ograph.NewElement("ZhangSan").UseFactory("SlowReady")
-
-	pipeline.Register(zhangSan).SetPoolCache(1, true)
-
-	start := time.Now()
-
-	if err := pipeline.Run(context.TODO(), nil); err != nil {
-		t.Error(err)
-	} else {
-		fmt.Printf("time cost: %s\n", time.Since(start))
-	}
 }
 
 func TestAdvance_DumpAndLoad(t *testing.T) {

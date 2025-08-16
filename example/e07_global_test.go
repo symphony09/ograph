@@ -3,6 +3,7 @@ package example
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 
 	"github.com/symphony09/ograph"
 	"github.com/symphony09/ograph/global"
@@ -15,11 +16,13 @@ func init() {
 }
 
 func TestGlobalFactory(t *testing.T) {
-	pipeline := ograph.NewPipeline()
+	synctest.Test(t, func(t *testing.T) {
+		pipeline := ograph.NewPipeline()
 
-	pipeline.Register(ograph.NewElement("x1").UseFactory(XFactory))
+		pipeline.Register(ograph.NewElement("x1").UseFactory(XFactory))
 
-	if err := pipeline.Run(context.TODO(), nil); err != nil {
-		t.Error(err)
-	}
+		if err := pipeline.Run(context.TODO(), nil); err != nil {
+			t.Error(err)
+		}
+	})
 }
